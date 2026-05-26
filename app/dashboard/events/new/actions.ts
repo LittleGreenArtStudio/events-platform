@@ -84,11 +84,6 @@ export async function createClient(
 ): Promise<CreateClientResult> {
   const supabase = await createSupabaseServerClient()
 
-  const name =
-    [input.firstName.trim(), input.lastName.trim()].filter(Boolean).join(" ") ||
-    input.company.trim() ||
-    "New Client"
-
   const { data, error } = await supabase
     .from("clients")
     .insert({

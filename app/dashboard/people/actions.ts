@@ -12,9 +12,6 @@ export async function createClient(formData: FormData) {
   const lastName = (formData.get("last_name") as string).trim()
   const company = (formData.get("company") as string).trim()
 
-  const name =
-    [firstName, lastName].filter(Boolean).join(" ") || company || "New Client"
-
   const { data, error } = await supabase
     .from("clients")
     .insert({
