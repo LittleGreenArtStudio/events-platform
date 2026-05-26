@@ -9,8 +9,8 @@ export default function LoginPage({
     <main className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="mb-10 text-center">
-          <h1 className="text-3xl font-serif text-stone-800 tracking-wide">
-            Craft Studio
+          <h1 className="text-3xl font-serif text-stone-800 tracking-wide italic">
+            Forager Crafts
           </h1>
           <p className="mt-2 text-stone-400 text-sm tracking-wide">
             Sign in to continue

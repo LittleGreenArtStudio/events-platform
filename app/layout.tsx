@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import localFont from "next/font/local"
-import { Lora } from "next/font/google"
+import { Cormorant_Garamond, Inter } from "next/font/google"
 import "./globals.css"
 
 const geistSans = localFont({
@@ -13,14 +13,22 @@ const geistMono = localFont({
   variable: "--font-geist-mono",
   weight: "100 900",
 })
-const lora = Lora({
+const cormorantGaramond = Cormorant_Garamond({
   subsets: ["latin"],
-  variable: "--font-lora",
+  variable: "--font-display",
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+  display: "swap",
+})
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  weight: ["400", "500", "600"],
   display: "swap",
 })
 
 export const metadata: Metadata = {
-  title: "Craft Studio",
+  title: "Forager Crafts",
   description: "Internal operations platform",
 }
 
@@ -32,7 +40,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${cormorantGaramond.variable} ${inter.variable} antialiased`}
       >
         {children}
       </body>
