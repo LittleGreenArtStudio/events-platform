@@ -18,7 +18,6 @@ export async function createClient(formData: FormData) {
   const { data, error } = await supabase
     .from("clients")
     .insert({
-      name,
       first_name: firstName || null,
       last_name: lastName || null,
       company: company || null,

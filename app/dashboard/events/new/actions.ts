@@ -92,14 +92,13 @@ export async function createClient(
   const { data, error } = await supabase
     .from("clients")
     .insert({
-      name,
       first_name: input.firstName || null,
       last_name: input.lastName || null,
       company: input.company || null,
       email: input.email || null,
       phone: input.phone || null,
     })
-    .select("id, name")
+    .select("id, first_name, last_name")
     .single()
 
   if (error) {
@@ -107,5 +106,12 @@ export async function createClient(
     return { error: `${error.code}: ${error.message}` }
   }
 
-  return { client: data as { id: string; name: string } }
+  type Row = { id: string; first_name: string | null; last_name: string | null }
+  const row = data as unknown as Row
+  const displayName =
+    [row.first_name, row.last_name].filter(Boolean).join(" ") ||
+    input.company.trim() ||
+    "New Client"
+
+  return { client: { id: row.id, name: displayName } }
 }

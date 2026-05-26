@@ -4,7 +4,7 @@ import styles from "./events.module.css"
 
 type Tab = "offsite" | "in-studio"
 
-type ClientRef = { name: string }
+type ClientRef = { first_name: string | null; last_name: string | null }
 
 type EventListRow = {
   id: string
@@ -72,11 +72,11 @@ export default async function EventsPage({
   const [offsiteResult, inStudioResult] = await Promise.all([
     supabase
       .from("offsite_events")
-      .select("id, title, status, event_date, guest_count, clients(name)")
+      .select("id, title, status, event_date, guest_count, clients(first_name, last_name)")
       .order("event_date"),
     supabase
       .from("in_studio_events")
-      .select("id, title, status, event_date, guest_count, clients(name)")
+      .select("id, title, status, event_date, guest_count, clients(first_name, last_name)")
       .order("event_date"),
   ])
 
@@ -128,7 +128,9 @@ export default async function EventsPage({
               <div className={styles.eventMain}>
                 <div className={styles.eventTitle}>{event.title}</div>
                 <div className={styles.eventMeta}>
-                  {event.clients?.name ?? "—"}
+                  {event.clients
+                    ? [event.clients.first_name, event.clients.last_name].filter(Boolean).join(" ") || "—"
+                    : "—"}
                   {" · "}
                   {formatDate(event.event_date)}
                   {event.guest_count != null

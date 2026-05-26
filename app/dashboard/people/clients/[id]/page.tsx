@@ -5,7 +5,6 @@ import styles from "../../people.module.css"
 
 type ClientDetail = {
   id: string
-  name: string
   first_name: string | null
   last_name: string | null
   company: string | null
@@ -83,6 +82,11 @@ export default async function ClientProfilePage({
   const offsiteEvents = (offsiteResult.data ?? []) as EventRow[]
   const studioEvents = (studioResult.data ?? []) as EventRow[]
 
+  const displayName =
+    [client.first_name, client.last_name].filter(Boolean).join(" ") ||
+    client.company ||
+    "Unnamed Client"
+
   const allEvents = [
     ...offsiteEvents.map((e) => ({ ...e, kind: "offsite" as const })),
     ...studioEvents.map((e) => ({ ...e, kind: "in-studio" as const })),
@@ -106,7 +110,7 @@ export default async function ClientProfilePage({
         <span className={styles.breadcrumbSep}>→</span>
         <Link href="/dashboard/people" className={styles.breadcrumbLink}>Clients</Link>
         <span className={styles.breadcrumbSep}>→</span>
-        <span className={styles.breadcrumbCurrent}>{client.name}</span>
+        <span className={styles.breadcrumbCurrent}>{displayName}</span>
       </div>
 
       <div className={styles.profileHeader}>
@@ -114,7 +118,7 @@ export default async function ClientProfilePage({
           <span className={styles.profileTypeLabel}>Client</span>
         </div>
         <h2 className={styles.profileName}>
-          {client.first_name ?? client.name}{" "}
+          {client.first_name ?? displayName}{" "}
           {client.last_name && (
             <em className={styles.profileNameAccent}>{client.last_name}</em>
           )}

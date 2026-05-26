@@ -5,7 +5,6 @@ import styles from "./people.module.css"
 
 type ClientRow = {
   id: string
-  name: string
   first_name: string | null
   last_name: string | null
   company: string | null
@@ -23,7 +22,7 @@ export default async function PeopleClientsPage() {
     offsiteIdsResult,
     studioIdsResult,
   ] = await Promise.all([
-    supabase.from("clients").select("*").order("name"),
+    supabase.from("clients").select("*").order("first_name"),
     supabase.from("staff").select("*", { count: "exact", head: true }),
     supabase.from("vendors").select("*", { count: "exact", head: true }),
     supabase.from("offsite_events").select("client_id").not("client_id", "is", null),
@@ -57,6 +56,10 @@ export default async function PeopleClientsPage() {
           <p className={styles.emptyState}>No clients yet.</p>
         ) : (
           clients.map((c) => {
+            const displayName =
+              [c.first_name, c.last_name].filter(Boolean).join(" ") ||
+              c.company ||
+              "Unnamed Client"
             const meta = [c.company, c.email, c.phone].filter(Boolean).join(" · ")
             const count = eventCounts.get(c.id) ?? 0
             return (
@@ -66,7 +69,7 @@ export default async function PeopleClientsPage() {
                 className={styles.personRow}
               >
                 <div className={styles.personMain}>
-                  <div className={styles.personName}>{c.name}</div>
+                  <div className={styles.personName}>{displayName}</div>
                   {meta && <div className={styles.personMeta}>{meta}</div>}
                 </div>
                 <div className={styles.personRight}>

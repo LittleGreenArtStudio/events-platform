@@ -17,7 +17,7 @@ type ValidTab =
   | "invoice"
   | "brief"
 
-type ClientRef = { name: string }
+type ClientRef = { first_name: string | null; last_name: string | null }
 
 type EventDetail = {
   id: string
@@ -174,7 +174,7 @@ export default async function EventFolder({
     supabase
       .from(table)
       .select(
-        "id, title, status, event_date, start_time, end_time, location, guest_count, budget, deposit_amount, notes, clients(name)"
+        "id, title, status, event_date, start_time, end_time, location, guest_count, budget, deposit_amount, notes, clients(first_name, last_name)"
       )
       .eq("id", id)
       .maybeSingle(),
@@ -218,7 +218,12 @@ export default async function EventFolder({
   const milestones = getMilestones(event.status, event.deposit_amount)
 
   const infoItems = [
-    { label: "Client", value: event.clients?.name ?? "—" },
+    {
+      label: "Client",
+      value: event.clients
+        ? [event.clients.first_name, event.clients.last_name].filter(Boolean).join(" ") || "—"
+        : "—",
+    },
     { label: "Date", value: formatLongDate(event.event_date) },
     {
       label: "Time",
