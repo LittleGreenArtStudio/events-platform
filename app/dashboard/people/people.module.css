@@ -1,0 +1,531 @@
+/* ── Tab Bar ──────────────────────────────────────────── */
+.tabBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tabs {
+  display: flex;
+}
+
+.tab {
+  padding: 14px 20px;
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s;
+}
+
+.tabActive {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
+.tabBadge {
+  font-family: var(--sans);
+  font-size: 9px;
+  background: var(--paper-3);
+  color: var(--muted);
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+.newBtn {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: white;
+  background: var(--accent);
+  border: none;
+  padding: 8px 16px;
+  text-decoration: none;
+  display: inline-block;
+  transition: background 0.15s;
+}
+
+.newBtn:hover {
+  background: var(--accent-2);
+}
+
+/* ── People List ──────────────────────────────────────── */
+.peopleList {
+  padding: 0 0 56px;
+}
+
+.personRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 48px;
+  border-bottom: 1px dotted var(--line-2);
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.personRow:hover {
+  transform: translateX(-4px);
+  background: var(--paper-2);
+}
+
+.personMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.personName {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--ink);
+  line-height: 1.2;
+  margin-bottom: 3px;
+}
+
+.personMeta {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.personRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.eventCountBadge {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--paper-3);
+  color: var(--muted-2);
+  padding: 3px 8px;
+  border-radius: 10px;
+}
+
+.rateBadge {
+  font-family: var(--sans);
+  font-size: 10px;
+  color: var(--muted-2);
+  white-space: nowrap;
+}
+
+/* ── Status Badges ────────────────────────────────────── */
+.activePill {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 2px;
+  background: rgba(93, 122, 78, 0.12);
+  color: var(--green);
+}
+
+.inactivePill {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 2px;
+  background: var(--paper-3);
+  color: var(--muted-2);
+}
+
+/* ── Empty State ──────────────────────────────────────── */
+.emptyState {
+  padding: 40px 48px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 17px;
+  color: var(--muted-2);
+}
+
+/* ── Breadcrumb ───────────────────────────────────────── */
+.breadcrumb {
+  padding: 20px 48px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+.breadcrumbLink {
+  color: var(--muted-2);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.breadcrumbLink:hover {
+  color: var(--ink);
+}
+
+.breadcrumbSep {
+  color: var(--line-2);
+}
+
+.breadcrumbCurrent {
+  color: var(--ink);
+}
+
+/* ── Profile Header ───────────────────────────────────── */
+.profileHeader {
+  padding: 18px 48px 24px;
+}
+
+.profileTypeRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.profileTypeLabel {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+.profileName {
+  font-family: var(--serif);
+  font-size: 56px;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--ink);
+  margin: 0 0 12px;
+}
+
+.profileNameAccent {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.profileSub {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  line-height: 1.6;
+}
+
+/* ── Profile Double Rule ──────────────────────────────── */
+.profileDoubleRule {
+  height: 5px;
+  border-top: 3px double var(--rule);
+  border-bottom: 1px solid var(--line-2);
+  margin: 0 48px;
+}
+
+/* ── Profile Content ──────────────────────────────────── */
+.profileContent {
+  padding: 32px 48px 56px;
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 56px;
+  align-items: start;
+}
+
+/* ── Info Pairs ───────────────────────────────────────── */
+.infoSectionTitle {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+.infoItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 1px dotted var(--line-2);
+  gap: 16px;
+}
+
+.infoLabel {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  flex-shrink: 0;
+}
+
+.infoValue {
+  font-family: var(--serif);
+  font-size: 17px;
+  color: var(--ink);
+  text-align: right;
+}
+
+/* ── Related Events ───────────────────────────────────── */
+.eventsSectionTitle {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+.relatedEventRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px dotted var(--line-2);
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s ease;
+}
+
+.relatedEventRow:hover {
+  transform: translateX(-4px);
+}
+
+.relatedEventRow:last-child {
+  border-bottom: none;
+}
+
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dotConfirmed { background: var(--green); }
+.dotInquiry   { background: var(--amber); }
+.dotMuted     { background: var(--muted-2); }
+
+.dotInProgress {
+  background: var(--red);
+  animation: pulseDot 2s ease-in-out infinite;
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(166, 77, 63, 0.35); }
+  50%       { opacity: 0.75; box-shadow: 0 0 0 4px rgba(166, 77, 63, 0); }
+}
+
+.relatedEventMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.relatedEventTitle {
+  font-family: var(--serif);
+  font-size: 19px;
+  font-weight: 400;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.relatedEventMeta {
+  font-family: var(--sans);
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.statusPill {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.pillGreen     { background: rgba(93, 122, 78, 0.12);  color: var(--green); }
+.pillAmber     { background: rgba(184, 137, 58, 0.12); color: var(--amber); }
+.pillRed       { background: rgba(166, 77, 63, 0.12);  color: var(--red);   }
+.pillMuted     { background: var(--paper-3); color: var(--muted-2); }
+.pillCancelled { background: var(--paper-3); color: var(--muted-2); text-decoration: line-through; }
+
+.noEvents {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--muted-2);
+  padding: 12px 0 0;
+}
+
+/* ── Not Found ────────────────────────────────────────── */
+.notFound {
+  padding: 48px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 18px;
+  color: var(--muted-2);
+}
+
+/* ── Form ─────────────────────────────────────────────── */
+.formWrap {
+  padding: 32px 48px 56px;
+  max-width: 680px;
+}
+
+.formHeading {
+  font-family: var(--serif);
+  font-size: 36px;
+  font-weight: 400;
+  color: var(--ink);
+  margin: 0 0 6px;
+}
+
+.formSub {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 28px;
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.formRow {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.formRow .formField {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.formLabel {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+.formLabelOptional {
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  color: var(--muted-2);
+  opacity: 0.7;
+}
+
+.formInput,
+.formSelect,
+.formTextarea {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line-2);
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.formInput:focus,
+.formSelect:focus,
+.formTextarea:focus {
+  border-color: var(--accent);
+}
+
+.formTextarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+.formError {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--red);
+  background: rgba(166, 77, 63, 0.07);
+  border: 1px solid rgba(166, 77, 63, 0.2);
+  padding: 10px 14px;
+  margin-bottom: 20px;
+}
+
+.formActions {
+  margin-top: 24px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.submitBtn {
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: white;
+  background: var(--accent);
+  border: none;
+  padding: 12px 28px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.submitBtn:hover {
+  background: var(--accent-2);
+}
+
+.cancelLink {
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.cancelLink:hover {
+  color: var(--ink);
+}
