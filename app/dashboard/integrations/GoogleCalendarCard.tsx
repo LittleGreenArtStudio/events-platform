@@ -1,11 +1,17 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { importCalendarEvent } from "./actions"
+import Link from "next/link"
+import { importCalendarEvent, updateCalendarPreferences, dismissEvent } from "./actions"
 import styles from "./integrations.module.css"
-import type { CalendarSuggestion } from "@/app/api/google/calendar/sync/route"
+import type { CalendarOption, CalendarSuggestion } from "./types"
 
-type ImportState = "idle" | "importing" | "done" | "error"
+type RowState =
+  | "idle"
+  | "importing"
+  | "ignored"
+  | { status: "imported"; eventId: string; eventType: string }
+  | { status: "error"; message: string }
 
 function formatDate(dateStr: string): string {
   const [y, m, d] = dateStr.split("-").map(Number)
@@ -18,11 +24,10 @@ function formatDate(dateStr: string): string {
 }
 
 function SuggestionRow({ suggestion }: { suggestion: CalendarSuggestion }) {
-  const [offState, setOffState] = useState<ImportState>("idle")
-  const [inState, setInState] = useState<ImportState>("idle")
+  const [state, setState] = useState<RowState>("idle")
   const [, startTransition] = useTransition()
 
-  const doImport = (eventType: "offsite" | "in-studio", setState: (s: ImportState) => void) => {
+  const doImport = (eventType: "offsite" | "in-studio") => {
     setState("importing")
     const fd = new FormData()
     fd.set("event_type", eventType)
@@ -35,11 +40,23 @@ function SuggestionRow({ suggestion }: { suggestion: CalendarSuggestion }) {
 
     startTransition(async () => {
       const result = await importCalendarEvent(fd)
-      setState(result.error ? "error" : "done")
+      if ("error" in result) {
+        setState({ status: "error", message: result.error })
+      } else {
+        setState({ status: "imported", eventId: result.eventId, eventType: result.eventType })
+      }
     })
   }
 
-  const isDone = offState === "done" || inState === "done"
+  const doIgnore = () => {
+    setState("ignored")
+    startTransition(async () => {
+      await dismissEvent(suggestion.googleId)
+    })
+  }
+
+  if (state === "ignored") return null
+
   const meta = [
     formatDate(suggestion.date),
     suggestion.startTime && suggestion.endTime
@@ -62,23 +79,39 @@ function SuggestionRow({ suggestion }: { suggestion: CalendarSuggestion }) {
       <div className={styles.suggActions}>
         {suggestion.alreadyExists ? (
           <span className={styles.alreadyTag}>Already imported</span>
-        ) : isDone ? (
-          <span className={styles.importedTag}>Imported ✓</span>
+        ) : state === "importing" ? (
+          <span className={styles.savingIndicator}>Importing…</span>
+        ) : typeof state === "object" && state.status === "imported" ? (
+          <>
+            <span className={styles.importedTag}>Imported ✓</span>
+            <Link
+              href={`/dashboard/events/${state.eventType}/${state.eventId}`}
+              className={styles.openFolderLink}
+            >
+              Open event folder →
+            </Link>
+          </>
+        ) : typeof state === "object" && state.status === "error" ? (
+          <span className={styles.errorTag}>{state.message}</span>
         ) : (
           <>
             <button
               className={styles.importBtn}
-              disabled={offState === "importing" || inState === "importing"}
-              onClick={() => doImport("offsite", setOffState)}
+              onClick={() => doImport("offsite")}
             >
-              {offState === "importing" ? "…" : "Offsite"}
+              Offsite
             </button>
             <button
               className={styles.importBtn}
-              disabled={offState === "importing" || inState === "importing"}
-              onClick={() => doImport("in-studio", setInState)}
+              onClick={() => doImport("in-studio")}
             >
-              {inState === "importing" ? "…" : "In-Studio"}
+              In-Studio
+            </button>
+            <button
+              className={styles.ignoreBtn}
+              onClick={doIgnore}
+            >
+              Ignore
             </button>
           </>
         )}
@@ -89,12 +122,34 @@ function SuggestionRow({ suggestion }: { suggestion: CalendarSuggestion }) {
 
 export default function GoogleCalendarCard({
   connected,
+  calendars,
+  selectedCalendarIds: initialSelectedIds,
 }: {
   connected: boolean
+  calendars: CalendarOption[]
+  selectedCalendarIds: string[]
 }) {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(
+    new Set(initialSelectedIds)
+  )
+  const [isPrefsPending, startPrefsTransition] = useTransition()
+
   const [syncing, setSyncing] = useState(false)
   const [syncError, setSyncError] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState<CalendarSuggestion[] | null>(null)
+
+  const toggleCalendar = (id: string) => {
+    const next = new Set(selectedIds)
+    if (next.has(id)) {
+      next.delete(id)
+    } else {
+      next.add(id)
+    }
+    setSelectedIds(next)
+    startPrefsTransition(async () => {
+      await updateCalendarPreferences(Array.from(next))
+    })
+  }
 
   const handleSync = async () => {
     setSyncing(true)
@@ -124,7 +179,7 @@ export default function GoogleCalendarCard({
         <div className={styles.cardInfo}>
           <div className={styles.cardTitle}>Google Calendar</div>
           <div className={styles.cardDesc}>
-            Import events from your primary Google Calendar into the event list.
+            Import events from your Google Calendars into the event list.
             <br />
             Scopes: Calendar (read), Gmail (read + send), Contacts (read).
           </div>
@@ -152,14 +207,48 @@ export default function GoogleCalendarCard({
         </div>
       </div>
 
-      {/* Sync error */}
+      {connected && calendars.length > 0 && (
+        <div className={styles.calChipsSection}>
+          <div className={styles.calChipsLabel}>
+            Calendars to sync
+            {isPrefsPending && (
+              <span className={styles.savingIndicator}> saving…</span>
+            )}
+          </div>
+          <div className={styles.calChips}>
+            {calendars.map((cal) => (
+              <button
+                key={cal.id}
+                type="button"
+                className={`${styles.calChip} ${
+                  selectedIds.has(cal.id) ? styles.calChipActive : ""
+                }`}
+                onClick={() => toggleCalendar(cal.id)}
+              >
+                {cal.color && (
+                  <span
+                    className={styles.calChipDot}
+                    style={{ background: cal.color }}
+                  />
+                )}
+                {cal.name}
+              </button>
+            ))}
+          </div>
+          <div className={styles.calChipsHint}>
+            {selectedIds.size === 0
+              ? "No calendars selected — all calendars will be synced"
+              : `${selectedIds.size} calendar${selectedIds.size !== 1 ? "s" : ""} selected`}
+          </div>
+        </div>
+      )}
+
       {syncError && (
         <div className={`${styles.banner} ${styles.bannerError}`}>
           {syncError}
         </div>
       )}
 
-      {/* Results */}
       {suggestions !== null && (
         <div className={styles.syncSection}>
           <div className={styles.syncSectionTitle}>
