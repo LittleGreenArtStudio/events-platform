@@ -35,7 +35,7 @@ function SuggestionRow({ suggestion }: { suggestion: CalendarSuggestion }) {
     fd.set("date", suggestion.date)
     fd.set("start_time", suggestion.startTime ?? "")
     fd.set("end_time", suggestion.endTime ?? "")
-    fd.set("location", suggestion.location ?? "")
+    fd.set("venue_address", suggestion.location ?? "")
     fd.set("description", suggestion.description ?? "")
 
     startTransition(async () => {

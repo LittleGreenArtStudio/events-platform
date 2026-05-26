@@ -31,7 +31,7 @@ export async function importCalendarEvent(
   }
 
   if (isOffsite) {
-    payload.location = (formData.get("location") as string) || null
+    payload.venue_address = (formData.get("venue_address") as string) || null
   }
 
   const { data, error } = await supabase

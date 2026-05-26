@@ -270,9 +270,9 @@ export default function NewEventForm({
         </div>
         {eventType === "offsite" && (
           <div className={`${styles.formField} ${styles.formFieldWide}`}>
-            <label className={styles.formLabel}>Location</label>
+            <label className={styles.formLabel}>Venue / Address</label>
             <input
-              name="location"
+              name="venue_address"
               type="text"
               className={styles.formInput}
               placeholder="Venue name or address"

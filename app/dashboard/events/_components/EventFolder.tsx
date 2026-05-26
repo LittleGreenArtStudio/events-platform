@@ -26,7 +26,7 @@ type EventDetail = {
   event_date: string
   start_time: string | null
   end_time: string | null
-  location: string | null
+  venue_address: string | null
   guest_count: number | null
   budget: number | null
   deposit_amount: number | null
@@ -174,7 +174,7 @@ export default async function EventFolder({
     supabase
       .from(table)
       .select(
-        "id, title, status, event_date, start_time, end_time, location, guest_count, budget, deposit_amount, notes, clients(first_name, last_name)"
+        "id, title, status, event_date, start_time, end_time, venue_address, guest_count, budget, deposit_amount, notes, clients(first_name, last_name)"
       )
       .eq("id", id)
       .maybeSingle(),
@@ -209,7 +209,7 @@ export default async function EventFolder({
       : event.start_time
       ? formatTime(event.start_time)
       : null,
-    event.location ?? (eventKind === "in-studio" ? "Studio" : null),
+    event.venue_address ?? (eventKind === "in-studio" ? "Studio" : null),
     event.guest_count != null ? `${event.guest_count} guests` : null,
   ]
     .filter(Boolean)
@@ -235,7 +235,7 @@ export default async function EventFolder({
           : "—",
     },
     ...(eventKind === "offsite"
-      ? [{ label: "Location", value: event.location ?? "—" }]
+      ? [{ label: "Venue", value: event.venue_address ?? "—" }]
       : []),
     { label: "Guests", value: event.guest_count?.toString() ?? "—" },
     { label: "Status", value: statusLabel(event.status) },

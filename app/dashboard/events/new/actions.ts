@@ -36,7 +36,7 @@ export async function createEvent(formData: FormData) {
   }
 
   if (isOffsite) {
-    payload.location = (formData.get("location") as string) || null
+    payload.venue_address = (formData.get("venue_address") as string) || null
   }
 
   console.log("[createEvent] table:", table)
