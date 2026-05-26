@@ -1,0 +1,256 @@
+/* ── Page wrap ────────────────────────────────────────── */
+.page {
+  padding: 32px 48px 56px;
+  max-width: 820px;
+}
+
+.heading {
+  font-family: var(--serif);
+  font-size: 36px;
+  font-weight: 400;
+  color: var(--ink);
+  margin: 0 0 4px;
+}
+
+.sub {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 36px;
+  letter-spacing: 0.04em;
+}
+
+/* ── Status banner ────────────────────────────────────── */
+.banner {
+  padding: 12px 16px;
+  font-family: var(--sans);
+  font-size: 12px;
+  margin-bottom: 24px;
+  letter-spacing: 0.02em;
+}
+
+.bannerSuccess {
+  background: rgba(93, 122, 78, 0.08);
+  border: 1px solid rgba(93, 122, 78, 0.25);
+  color: var(--green);
+}
+
+.bannerError {
+  background: rgba(166, 77, 63, 0.07);
+  border: 1px solid rgba(166, 77, 63, 0.2);
+  color: var(--red);
+}
+
+/* ── Integration card ─────────────────────────────────── */
+.card {
+  border: 1px solid var(--line-2);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.cardInfo {}
+
+.cardTitle {
+  font-family: var(--serif);
+  font-size: 24px;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.cardDesc {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.cardActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.connectedBadge {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--green);
+  background: rgba(93, 122, 78, 0.1);
+  border: 1px solid rgba(93, 122, 78, 0.25);
+  padding: 4px 10px;
+}
+
+.connectBtn {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: white;
+  background: var(--accent);
+  border: none;
+  padding: 8px 18px;
+  text-decoration: none;
+  display: inline-block;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.connectBtn:hover {
+  background: var(--accent-2);
+}
+
+.connectBtn:disabled {
+  background: var(--muted-2);
+  cursor: default;
+}
+
+.outlineBtn {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  background: none;
+  border: 1px solid var(--line-2);
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.outlineBtn:hover {
+  color: var(--ink);
+  border-color: var(--rule);
+}
+
+.outlineBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ── Sync results ─────────────────────────────────────── */
+.syncSection {
+  margin-top: 28px;
+}
+
+.syncSectionTitle {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+.syncEmpty {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--muted-2);
+  padding: 16px 0;
+}
+
+.syncSpinner {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--muted-2);
+  padding: 16px 0;
+}
+
+/* ── Suggestion row ───────────────────────────────────── */
+.suggRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px dotted var(--line-2);
+}
+
+.suggRow:last-child {
+  border-bottom: none;
+}
+
+.suggBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.suggTitle {
+  font-family: var(--serif);
+  font-size: 20px;
+  color: var(--ink);
+  line-height: 1.2;
+  margin-bottom: 3px;
+}
+
+.suggMeta {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.suggActions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.importBtn {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  cursor: pointer;
+  border: 1px solid var(--line-2);
+  background: none;
+  color: var(--muted-2);
+  transition: all 0.15s;
+}
+
+.importBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.importBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.alreadyTag {
+  font-family: var(--sans);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  background: var(--paper-3);
+  padding: 4px 8px;
+}
+
+.importedTag {
+  font-family: var(--sans);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--green);
+  background: rgba(93, 122, 78, 0.1);
+  padding: 4px 8px;
+}

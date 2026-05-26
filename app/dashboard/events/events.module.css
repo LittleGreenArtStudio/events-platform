@@ -275,6 +275,14 @@
   color: var(--muted-2);
 }
 
+.formLabelOptional {
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  color: var(--muted-2);
+  opacity: 0.7;
+}
+
 .formInput,
 .formSelect,
 .formTextarea {
@@ -346,9 +354,62 @@
   text-transform: uppercase;
   color: var(--muted-2);
   text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
   transition: color 0.15s;
 }
 
 .cancelLink:hover {
   color: var(--ink);
+}
+
+/* ── Inline add-client panel ──────────────────────────── */
+.addClientPanel {
+  background: var(--paper-2);
+  border: 1px solid var(--line-2);
+  border-left: 3px solid var(--accent);
+  padding: 16px 20px 20px;
+  margin-bottom: 16px;
+}
+
+.addClientPanelTitle {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 14px;
+}
+
+.addClientActions {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.addClientSaveBtn {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: white;
+  background: var(--accent);
+  border: none;
+  padding: 9px 20px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.addClientSaveBtn:hover:not(:disabled) {
+  background: var(--accent-2);
+}
+
+.addClientSaveBtn:disabled {
+  background: var(--muted-2);
+  cursor: default;
 }

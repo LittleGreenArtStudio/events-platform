@@ -6,10 +6,13 @@ import styles from "../dashboard.module.css"
 export default function MastheadTitle() {
   const pathname = usePathname()
   const isEvents = pathname.startsWith("/dashboard/events")
+  const isIntegrations = pathname.startsWith("/dashboard/integrations")
   return (
     <h1 className={styles.mastheadTitle}>
       {isEvents ? (
         <em className={styles.mastheadTitleAccent}>Events</em>
+      ) : isIntegrations ? (
+        <em className={styles.mastheadTitleAccent}>Integrations</em>
       ) : (
         <>
           Studio <em className={styles.mastheadTitleAccent}>HQ</em>
