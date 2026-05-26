@@ -1,6 +1,4 @@
 import { createSupabaseServerClient } from "@/lib/auth"
-import { redirect } from "next/navigation"
-import { signOut } from "./actions"
 import styles from "./dashboard.module.css"
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -122,22 +120,6 @@ function TodoRow({
 
 export default async function DashboardPage() {
   const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) redirect("/login")
-
-  // NOTE: if this query returns null, check the RLS policy on user_roles —
-  // a recursive policy (policy → helper fn → queries user_roles) causes a
-  // PostgreSQL stack-depth error (code 54001) that silently nulls the result.
-  // Fix: DROP the recursive policy and replace with:
-  //   CREATE POLICY "users_read_own_role" ON user_roles FOR SELECT
-  //   TO authenticated USING (auth.uid() = user_id);
-  const { data: roleData } = await supabase
-    .from("user_roles")
-    .select("display_name, role")
-    .eq("user_id", user.id)
-    .maybeSingle()
 
   // Date ranges
   const today = new Date().toISOString().split("T")[0]
@@ -298,67 +280,10 @@ export default async function DashboardPage() {
     { label: "Outstanding Invoices", value: invoicesCount.count ?? 0 },
   ]
 
-  const displayName = roleData?.display_name ?? user.email ?? "User"
-  // Fall back to app_metadata.role when the user_roles query fails due to
-  // the recursive RLS policy — app_metadata comes directly from the JWT
-  // and does not hit the database.
-  const appMetaRole = (user.app_metadata as Record<string, unknown>)
-    ?.role as string | undefined
-  const resolvedRole = roleData?.role ?? appMetaRole
-  const roleLabel = resolvedRole?.toLowerCase() === "admin" ? "Admin" : "Assistant"
-
-  const mastheadDate = new Date().toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  })
-
   const openCount = openTasksCount.count ?? 0
 
   return (
-    <div className={styles.page}>
-      {/* ── Masthead ── */}
-      <header className={styles.masthead}>
-        <div className={styles.mastheadLeft}>
-          <span className={styles.studioName}>Forager Crafts</span>
-          <span className={styles.mastheadDate}>{mastheadDate}</span>
-        </div>
-        <div className={styles.mastheadCenter}>
-          <h1 className={styles.mastheadTitle}>
-            Studio <em className={styles.mastheadTitleAccent}>HQ</em>
-          </h1>
-        </div>
-        <div className={styles.mastheadRight}>
-          <span className={styles.mastheadPageLabel}>Studio HQ</span>
-          <span className={styles.mastheadUser}>{displayName}</span>
-          <span className={styles.mastheadRole}>{roleLabel}</span>
-          <form action={signOut}>
-            <button type="submit" className={styles.signOutBtn}>
-              Sign out
-            </button>
-          </form>
-        </div>
-      </header>
-
-      {/* ── Double Rule ── */}
-      <div className={styles.doubleRule} />
-
-      {/* ── Nav ── */}
-      <nav className={styles.nav}>
-        {["Studio HQ", "Events", "Craft Library", "People", "Tasks"].map(
-          (item) => (
-            <span
-              key={item}
-              className={`${styles.navItem} ${
-                item === "Studio HQ" ? styles.navItemActive : ""
-              }`}
-            >
-              {item}
-            </span>
-          )
-        )}
-      </nav>
-
+    <>
       {/* ── Pulse Bar ── */}
       <div className={styles.pulseBar}>
         {pulseStats.map(({ label, value }) => (
@@ -517,7 +442,7 @@ export default async function DashboardPage() {
 
           <div className={styles.aiCard}>
             <p className={styles.aiCardText}>
-              No items pending — {displayName} is all caught up.
+              Nothing pending — all caught up.
             </p>
           </div>
 
@@ -554,6 +479,6 @@ export default async function DashboardPage() {
         </div>
         <div className={styles.footerRight}>Last sync · just now</div>
       </footer>
-    </div>
+    </>
   )
 }

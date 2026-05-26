@@ -1,0 +1,407 @@
+/* ── Breadcrumb ───────────────────────────────────────── */
+.breadcrumb {
+  padding: 20px 48px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+.breadcrumbLink {
+  color: var(--muted-2);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.breadcrumbLink:hover {
+  color: var(--ink);
+}
+
+.breadcrumbSep {
+  color: var(--line-2);
+}
+
+.breadcrumbCurrent {
+  color: var(--ink);
+}
+
+/* ── Folder Header ────────────────────────────────────── */
+.folderHeader {
+  padding: 18px 48px 28px;
+}
+
+.folderTypeRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.folderTypeLabel {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+/* Status pills (same palette as events list) */
+.statusPill {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 2px;
+}
+
+.pillGreen {
+  background: rgba(93, 122, 78, 0.12);
+  color: var(--green);
+}
+
+.pillAmber {
+  background: rgba(184, 137, 58, 0.12);
+  color: var(--amber);
+}
+
+.pillRed {
+  background: rgba(166, 77, 63, 0.12);
+  color: var(--red);
+}
+
+.pillMuted {
+  background: var(--paper-3);
+  color: var(--muted-2);
+}
+
+.pillCancelled {
+  background: var(--paper-3);
+  color: var(--muted-2);
+  text-decoration: line-through;
+}
+
+.folderTitle {
+  font-family: var(--serif);
+  font-size: 64px;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--ink);
+  margin: 0 0 14px;
+}
+
+.folderTitleAccent {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.folderSubtitle {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+.folderActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.folderDaysUntil {
+  margin-left: auto;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 18px;
+  color: var(--muted-2);
+}
+
+.actionBtn {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  background: none;
+  border: 1px solid var(--line-2);
+  padding: 7px 14px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.actionBtn:hover {
+  color: var(--ink);
+  border-color: var(--rule);
+}
+
+/* ── Double Rule ──────────────────────────────────────── */
+.folderDoubleRule {
+  height: 5px;
+  border-top: 3px double var(--rule);
+  border-bottom: 1px solid var(--line-2);
+  margin: 0 48px;
+}
+
+/* ── Folder Tabs ──────────────────────────────────────── */
+.folderTabs {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+  padding: 0 48px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.folderTabs::-webkit-scrollbar {
+  display: none;
+}
+
+.folderTab {
+  padding: 14px 18px;
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
+  position: relative;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s;
+}
+
+.folderTabActive {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
+.folderTab:hover {
+  color: var(--ink-2);
+}
+
+/* ── Tab Content ──────────────────────────────────────── */
+.folderContent {
+  padding: 32px 48px 56px;
+}
+
+/* ── Overview Grid ────────────────────────────────────── */
+.overviewGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  align-items: start;
+}
+
+.infoListTitle {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+.infoItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 1px dotted var(--line-2);
+  gap: 16px;
+}
+
+.infoLabel {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  flex-shrink: 0;
+}
+
+.infoValue {
+  font-family: var(--serif);
+  font-size: 17px;
+  color: var(--ink);
+  text-align: right;
+}
+
+/* ── Milestone Checklist ──────────────────────────────── */
+.milestonesTitle {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+.milestone {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.milestone:last-child {
+  border-bottom: none;
+}
+
+.milestoneCheck {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--rule);
+  border-radius: 2px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.milestoneCheckDone {
+  background: var(--green);
+  border-color: var(--green);
+}
+
+.milestoneLabel {
+  font-family: var(--serif);
+  font-size: 17px;
+  color: var(--ink);
+}
+
+.milestoneLabelPending {
+  color: var(--muted-2);
+}
+
+/* ── Crafts Tab ───────────────────────────────────────── */
+.craftList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.craftRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.craftName {
+  font-family: var(--serif);
+  font-size: 20px;
+  color: var(--ink);
+}
+
+.craftMeta {
+  font-family: var(--sans);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.craftQty {
+  font-family: var(--serif);
+  font-size: 20px;
+  color: var(--ink-2);
+  flex-shrink: 0;
+}
+
+/* ── Tasks Tab ────────────────────────────────────────── */
+.taskItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.taskCheckbox {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--rule);
+  border-radius: 2px;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.taskCheckboxDone {
+  background: var(--accent);
+  border-color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.taskTitle {
+  font-family: var(--serif);
+  font-size: 18px;
+  color: var(--ink);
+  flex: 1;
+}
+
+.taskTitleDone {
+  text-decoration: line-through;
+  color: var(--muted-2);
+}
+
+.taskDue {
+  font-family: var(--sans);
+  font-size: 10px;
+  color: var(--muted-2);
+  flex-shrink: 0;
+  margin-top: 5px;
+  white-space: nowrap;
+}
+
+.taskDueOverdue {
+  color: var(--red);
+  font-weight: 500;
+}
+
+/* ── Coming Soon ──────────────────────────────────────── */
+.comingSoon {
+  padding: 48px 0;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 18px;
+  color: var(--muted-2);
+  text-align: center;
+}
+
+/* ── Empty States ─────────────────────────────────────── */
+.emptyState {
+  padding: 32px 0;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--muted-2);
+}
+
+/* ── Not Found ────────────────────────────────────────── */
+.notFound {
+  padding: 48px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 18px;
+  color: var(--muted-2);
+}
