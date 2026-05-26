@@ -127,11 +127,17 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
+  // NOTE: if this query returns null, check the RLS policy on user_roles —
+  // a recursive policy (policy → helper fn → queries user_roles) causes a
+  // PostgreSQL stack-depth error (code 54001) that silently nulls the result.
+  // Fix: DROP the recursive policy and replace with:
+  //   CREATE POLICY "users_read_own_role" ON user_roles FOR SELECT
+  //   TO authenticated USING (auth.uid() = user_id);
   const { data: roleData } = await supabase
     .from("user_roles")
     .select("display_name, role")
     .eq("user_id", user.id)
-    .single()
+    .maybeSingle()
 
   // Date ranges
   const today = new Date().toISOString().split("T")[0]
@@ -293,8 +299,13 @@ export default async function DashboardPage() {
   ]
 
   const displayName = roleData?.display_name ?? user.email ?? "User"
-  const roleLabel =
-    roleData?.role?.toLowerCase() === "admin" ? "Admin" : "Assistant"
+  // Fall back to app_metadata.role when the user_roles query fails due to
+  // the recursive RLS policy — app_metadata comes directly from the JWT
+  // and does not hit the database.
+  const appMetaRole = (user.app_metadata as Record<string, unknown>)
+    ?.role as string | undefined
+  const resolvedRole = roleData?.role ?? appMetaRole
+  const roleLabel = resolvedRole?.toLowerCase() === "admin" ? "Admin" : "Assistant"
 
   const mastheadDate = new Date().toLocaleDateString("en-US", {
     month: "long",
@@ -536,7 +547,7 @@ export default async function DashboardPage() {
       {/* ── Footer ── */}
       <footer className={styles.footer}>
         <div className={styles.footerLeft}>
-          Forager Crafts Studio · Portland, OR
+          Forager Crafts Studio · Los Angeles, CA
         </div>
         <div className={styles.footerCenter}>
           Make it slowly. Make it beautifully.
