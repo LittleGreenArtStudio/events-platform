@@ -1858,6 +1858,7 @@
   background: var(--paper-3);
   cursor: grab;
   border-radius: 1px;
+  aspect-ratio: 1 / 1;
 }
 
 .pbCell:active { cursor: grabbing; }
@@ -1869,11 +1870,7 @@
 }
 
 .pbImg {
-  width: 100%;
-  aspect-ratio: 1 / 1;
   object-fit: cover;
-  display: block;
-  background: var(--paper-3);
   transition: transform 0.25s ease;
 }
 
@@ -1992,6 +1989,8 @@
 .pbLbNext { right: 16px; }
 
 .pbLbImg {
+  width: auto;
+  height: auto;
   max-width: min(90vw, 1000px);
   max-height: 80vh;
   object-fit: contain;

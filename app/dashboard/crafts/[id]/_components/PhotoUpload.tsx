@@ -3,8 +3,10 @@
 import { useRef, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { createBrowserClient } from "@supabase/ssr"
+import Image from "next/image"
 import { addCraftPhotoUrl, removeCraftPhoto } from "../../actions"
 import { compressImage } from "@/lib/compress-image"
+import { BLUR_DATA_URL } from "@/lib/blur-data-url"
 import styles from "../../crafts.module.css"
 
 export default function PhotoUpload({
@@ -83,8 +85,15 @@ export default function PhotoUpload({
         <div className={styles.photoGrid}>
           {imageUrls.map((url) => (
             <div key={url} className={styles.photoThumb}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={url} alt="" className={styles.photoThumbImg} />
+              <Image
+                src={url}
+                alt=""
+                fill
+                sizes="600px"
+                className={styles.photoThumbImg}
+                placeholder="blur"
+                blurDataURL={BLUR_DATA_URL}
+              />
               <button
                 className={styles.photoRemoveBtn}
                 disabled={removingUrl === url}

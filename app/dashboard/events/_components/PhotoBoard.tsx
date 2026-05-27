@@ -3,9 +3,11 @@
 import { useEffect, useRef, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { createBrowserClient } from "@supabase/ssr"
+import Image from "next/image"
 import { updateEventPhotoUrls } from "../photo-actions"
 import type { PhotoEntry } from "../photo-actions"
 import { compressImage } from "@/lib/compress-image"
+import { BLUR_DATA_URL } from "@/lib/blur-data-url"
 import styles from "../folder.module.css"
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -231,7 +233,7 @@ export default function PhotoBoard({
         <p className={styles.emptyState}>No photos tagged &ldquo;{filter}&rdquo;.</p>
       ) : (
         <div className={styles.pbGrid}>
-          {filtered.map((photo) => {
+          {filtered.map((photo, filteredIdx) => {
             const fullIdx = photos.indexOf(photo)
             const isDragging = dragSrc === fullIdx
             const canDrag = filter === "All"
@@ -243,14 +245,17 @@ export default function PhotoBoard({
                 onDragStart={canDrag ? () => handleDragStart(fullIdx) : undefined}
                 onDragOver={canDrag ? (e) => handleDragOver(e, fullIdx) : undefined}
                 onDragEnd={canDrag ? handleDragEnd : undefined}
+                onClick={() => setLightboxUrl(photo.url)}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={photo.url}
                   alt={photo.tag}
+                  fill
+                  sizes="400px"
                   className={styles.pbImg}
-                  loading="lazy"
-                  onClick={() => setLightboxUrl(photo.url)}
+                  priority={filteredIdx < 8}
+                  placeholder="blur"
+                  blurDataURL={BLUR_DATA_URL}
                 />
                 <div className={styles.pbOverlay}>
                   <span className={styles.pbTagPill}>{photo.tag}</span>
@@ -302,12 +307,16 @@ export default function PhotoBoard({
             </button>
           )}
 
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src={lightboxPhoto.url}
             alt={lightboxPhoto.tag}
+            width={1200}
+            height={900}
             className={styles.pbLbImg}
             onClick={(e) => e.stopPropagation()}
+            placeholder="blur"
+            blurDataURL={BLUR_DATA_URL}
+            priority
           />
 
           {lightboxIdx < photos.length - 1 && (

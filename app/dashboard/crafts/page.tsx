@@ -1,5 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/auth"
 import Link from "next/link"
+import Image from "next/image"
+import { BLUR_DATA_URL } from "@/lib/blur-data-url"
 import styles from "./crafts.module.css"
 
 const CATEGORIES = [
@@ -86,7 +88,7 @@ export default async function CraftLibraryPage({
             {activeCategory ? `No crafts in "${activeCategory}" yet.` : "No crafts yet — add your first one."}
           </p>
         ) : (
-          crafts.map((craft) => {
+          crafts.map((craft, craftIdx) => {
             const metaParts: string[] = []
             if (craft.time_per_guest) metaParts.push(`${craft.time_per_guest} min / guest`)
             if (craft.min_guests != null || craft.max_guests != null) {
@@ -103,12 +105,18 @@ export default async function CraftLibraryPage({
                 className={styles.craftRow}
               >
                 {craft.image_urls?.[0] && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={craft.image_urls[0]}
-                    alt=""
-                    className={styles.craftThumb}
-                  />
+                  <div className={styles.craftThumb}>
+                    <Image
+                      src={craft.image_urls[0]}
+                      alt=""
+                      fill
+                      sizes="400px"
+                      style={{ objectFit: "cover" }}
+                      priority={craftIdx < 8}
+                      placeholder="blur"
+                      blurDataURL={BLUR_DATA_URL}
+                    />
+                  </div>
                 )}
                 <div className={styles.craftMain}>
                   <div className={styles.craftName}>{craft.name}</div>
