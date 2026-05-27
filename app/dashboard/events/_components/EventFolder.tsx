@@ -13,6 +13,7 @@ import AddTaskForm from "./AddTaskForm"
 import AddThreadForm from "./AddThreadForm"
 import InvoicePanel from "./InvoicePanel"
 import EventBriefPanel from "./EventBriefPanel"
+import EstimatePanel from "./EstimatePanel"
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -28,6 +29,7 @@ type ValidTab =
   | "threads"
   | "invoice"
   | "brief"
+  | "estimate"
 
 type ClientRef = { first_name: string | null; last_name: string | null }
 
@@ -141,6 +143,7 @@ const TABS: { key: ValidTab; label: string }[] = [
   { key: "timeline", label: "Timeline" },
   { key: "threads", label: "Threads" },
   { key: "invoice", label: "Invoice" },
+  { key: "estimate", label: "Estimate" },
   { key: "brief", label: "Brief" },
 ]
 
@@ -245,6 +248,7 @@ export default async function EventFolder({
     tasksResult,
     threadsResult,
     invoicesResult,
+    estimateResult,
   ] = await Promise.all([
     supabase
       .from(table)
@@ -292,6 +296,13 @@ export default async function EventFolder({
       )
       .eq(eventFkColumn, id)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("estimates")
+      .select("*")
+      .eq(eventFkColumn, id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ])
 
   if (!eventResult.data) notFound()
@@ -304,6 +315,7 @@ export default async function EventFolder({
   const tasks = (tasksResult.data ?? []) as unknown as TaskRow[]
   const threads = (threadsResult.data ?? []) as unknown as ThreadRow[]
   const invoices = (invoicesResult.data ?? []) as unknown as InvoiceRow[]
+  const estimate = estimateResult.data ?? null
 
   const today = new Date().toISOString().split("T")[0]
   const days = daysUntil(event.event_date)
@@ -757,6 +769,27 @@ export default async function EventFolder({
             eventKind={eventKind}
             eventId={id}
             invoices={invoices}
+          />
+        )}
+
+        {/* ── Estimate ── */}
+        {activeTab === "estimate" && (
+          <EstimatePanel
+            eventKind={eventKind}
+            eventId={id}
+            estimate={estimate as Parameters<typeof EstimatePanel>[0]["estimate"]}
+            eventCrafts={eventCrafts as Parameters<typeof EstimatePanel>[0]["eventCrafts"]}
+            eventStaff={eventStaff as Parameters<typeof EstimatePanel>[0]["eventStaff"]}
+            guestCount={event.guest_count}
+            isOffsite={eventKind === "offsite"}
+            clientName={
+              event.clients
+                ? [event.clients.first_name, event.clients.last_name].filter(Boolean).join(" ")
+                : ""
+            }
+            eventTitle={event.title}
+            eventDate={event.event_date}
+            venueAddress={event.venue_address}
           />
         )}
 
