@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { createBrowserClient } from "@supabase/ssr"
 import { addCraftPhotoUrl, removeCraftPhoto } from "../../actions"
+import { compressImage } from "@/lib/compress-image"
 import styles from "../../crafts.module.css"
 
 export default function PhotoUpload({
@@ -15,14 +16,13 @@ export default function PhotoUpload({
 }) {
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
-  const [uploading, setUploading] = useState(false)
+  const [uploadStatus, setUploadStatus] = useState<"idle" | "optimising" | "uploading">("idle")
   const [removingUrl, setRemovingUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [, startTransition] = useTransition()
 
   const handleFiles = async (files: FileList) => {
     setError(null)
-    setUploading(true)
 
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,15 +30,22 @@ export default function PhotoUpload({
     )
 
     for (const file of Array.from(files)) {
-      const path = `${craftId}/${Date.now()}-${file.name}`
+      setUploadStatus("optimising")
+      const compressed = await compressImage(file)
+
+      setUploadStatus("uploading")
+      const baseName = compressed.name.replace(/[^a-z0-9_.-]/gi, "-")
+      const path = `${craftId}/${Date.now()}-${baseName}`
 
       const { error: uploadError } = await supabase.storage
         .from("craft-images")
-        .upload(path, file, { contentType: file.type, upsert: false })
+        .upload(path, compressed, { contentType: compressed.type, upsert: false })
 
       if (uploadError) {
         setError(`Upload failed: ${uploadError.message}`)
-        break
+        setUploadStatus("idle")
+        if (fileRef.current) fileRef.current.value = ""
+        return
       }
 
       const { data: { publicUrl } } = supabase.storage
@@ -48,11 +55,13 @@ export default function PhotoUpload({
       const res = await addCraftPhotoUrl(craftId, publicUrl)
       if ("error" in res) {
         setError(res.error)
-        break
+        setUploadStatus("idle")
+        if (fileRef.current) fileRef.current.value = ""
+        return
       }
     }
 
-    setUploading(false)
+    setUploadStatus("idle")
     if (fileRef.current) fileRef.current.value = ""
     router.refresh()
   }
@@ -103,10 +112,16 @@ export default function PhotoUpload({
       />
       <button
         className={styles.uploadBtn}
-        disabled={uploading}
+        disabled={uploadStatus !== "idle"}
         onClick={() => fileRef.current?.click()}
       >
-        {uploading ? "Uploading…" : imageUrls.length > 0 ? "+ Add More Photos" : "+ Add Photos"}
+        {uploadStatus === "optimising"
+          ? "Optimising image…"
+          : uploadStatus === "uploading"
+          ? "Uploading…"
+          : imageUrls.length > 0
+          ? "+ Add More Photos"
+          : "+ Add Photos"}
       </button>
     </div>
   )

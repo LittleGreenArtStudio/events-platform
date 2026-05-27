@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { createBrowserClient } from "@supabase/ssr"
 import { updateEventPhotoUrls } from "../photo-actions"
 import type { PhotoEntry } from "../photo-actions"
+import { compressImage } from "@/lib/compress-image"
 import styles from "../folder.module.css"
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -12,60 +13,6 @@ import styles from "../folder.module.css"
 type PhotoTag = "Inspo" | "Client Provided" | "Venue" | "Past Event" | "Other"
 
 const TAGS: PhotoTag[] = ["Inspo", "Client Provided", "Venue", "Past Event", "Other"]
-
-// ── Image compression ─────────────────────────────────────────────────────
-
-async function compress(
-  file: File
-): Promise<{ blob: Blob; ext: string; mime: string }> {
-  // Preserve GIF animation — don't canvas-ify
-  if (file.type === "image/gif") {
-    return { blob: file, ext: "gif", mime: "image/gif" }
-  }
-
-  return new Promise((resolve) => {
-    const img = new Image()
-    const objectUrl = URL.createObjectURL(file)
-
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl)
-      const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg"
-      resolve({ blob: file, ext, mime: file.type })
-    }
-
-    img.onload = () => {
-      URL.revokeObjectURL(objectUrl)
-      const MAX = 1200
-      const scale = img.naturalWidth > MAX ? MAX / img.naturalWidth : 1
-      const w = Math.round(img.naturalWidth * scale)
-      const h = Math.round(img.naturalHeight * scale)
-      const canvas = document.createElement("canvas")
-      canvas.width = w
-      canvas.height = h
-      canvas.getContext("2d")!.drawImage(img, 0, 0, w, h)
-
-      // Prefer webp; fall back to jpeg; fall back to original
-      canvas.toBlob(
-        (webp) => {
-          if (webp) return resolve({ blob: webp, ext: "webp", mime: "image/webp" })
-          canvas.toBlob(
-            (jpeg) => {
-              if (jpeg) return resolve({ blob: jpeg, ext: "jpg", mime: "image/jpeg" })
-              const fallbackExt = file.name.split(".").pop()?.toLowerCase() ?? "jpg"
-              resolve({ blob: file, ext: fallbackExt, mime: file.type })
-            },
-            "image/jpeg",
-            0.85
-          )
-        },
-        "image/webp",
-        0.8
-      )
-    }
-
-    img.src = objectUrl
-  })
-}
 
 // ── Main component ────────────────────────────────────────────────────────
 
@@ -87,6 +34,7 @@ export default function PhotoBoard({
   const [uploadTag, setUploadTag] = useState<PhotoTag>("Inspo")
   const [uploading, setUploading] = useState(false)
   const [uploadLabel, setUploadLabel] = useState("")
+  const [optimising, setOptimising] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // Lightbox — tracked by URL so it survives photo reorders
@@ -124,7 +72,6 @@ export default function PhotoBoard({
   // ── Upload ────────────────────────────────────────────────────────────
   const handleFiles = async (files: FileList) => {
     setError(null)
-    setUploading(true)
 
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -136,15 +83,21 @@ export default function PhotoBoard({
 
     for (let i = 0; i < fileArray.length; i++) {
       const file = fileArray[i]
+
+      setOptimising(true)
+      setUploading(false)
+      const compressed = await compressImage(file)
+      setOptimising(false)
+
+      setUploading(true)
       setUploadLabel(`${i + 1} / ${fileArray.length}`)
 
-      const { blob, ext, mime } = await compress(file)
-      const baseName = file.name.replace(/\.[^.]+$/, "").replace(/[^a-z0-9_-]/gi, "-")
-      const storagePath = `${eventKind}/${eventId}/${Date.now()}-${baseName}.${ext}`
+      const baseName = compressed.name.replace(/[^a-z0-9_.-]/gi, "-")
+      const storagePath = `${eventKind}/${eventId}/${Date.now()}-${baseName}`
 
       const { error: uploadError } = await supabase.storage
         .from("event-photos")
-        .upload(storagePath, blob, { contentType: mime, upsert: false })
+        .upload(storagePath, compressed, { contentType: compressed.type, upsert: false })
 
       if (uploadError) {
         setError(`Upload failed: ${uploadError.message}`)
@@ -224,10 +177,14 @@ export default function PhotoBoard({
         </select>
         <button
           className={styles.addBtn}
-          disabled={uploading}
+          disabled={optimising || uploading}
           onClick={() => fileRef.current?.click()}
         >
-          {uploading ? `Uploading ${uploadLabel}…` : "+ Add Photos"}
+          {optimising
+            ? "Optimising image…"
+            : uploading
+            ? `Uploading ${uploadLabel}…`
+            : "+ Add Photos"}
         </button>
         <input
           ref={fileRef}
