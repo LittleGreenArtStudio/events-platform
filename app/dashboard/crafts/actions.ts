@@ -1,8 +1,17 @@
 "use server"
 
+import Anthropic from "@anthropic-ai/sdk"
 import { createSupabaseServerClient } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
+
+export type AISuggestion = {
+  name: string
+  unit: string
+  qty_per_guest: number | null
+  unit_cost: number | null
+  vendor_suggestion?: string
+}
 
 // ── Create Craft ──────────────────────────────────────────────────────────
 
@@ -105,6 +114,177 @@ export async function createAndAddSupply(
   }
 
   revalidatePath(`/dashboard/crafts/${craftId}`)
+  return { ok: true }
+}
+
+// ── AI Supply Drafter ─────────────────────────────────────────────────────
+
+export async function draftSuppliesWithAI(
+  craftName: string,
+  category: string | null
+): Promise<{ suggestions: AISuggestion[] } | { error: string }> {
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+  const prompt = `You are a craft supplies expert helping a craft events studio.
+For the craft "${craftName}"${category ? ` in the category "${category}"` : ""}, suggest a realistic supply list for a group craft workshop setting.
+
+For each supply provide:
+- name: the supply name
+- unit: unit of measure (sheet, bottle, yard, each, oz, ft, set, etc.)
+- qty_per_guest: realistic quantity per participant (decimals like 0.5 are fine)
+- unit_cost: estimated unit cost in USD based on bulk art supply pricing
+- vendor_suggestion: a realistic vendor (Blick Art Materials, Michaels, Amazon, etc.)
+
+Return ONLY a valid JSON array with no markdown, no explanation, no code blocks. Example:
+[{"name":"Watercolor Paper","unit":"sheet","qty_per_guest":2,"unit_cost":0.45,"vendor_suggestion":"Blick Art Materials"}]
+
+Suggest 6-10 supplies needed for this craft in a group workshop setting.`
+
+  try {
+    const message = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1024,
+      messages: [{ role: "user", content: prompt }],
+    })
+
+    const raw = message.content
+      .filter((b) => b.type === "text")
+      .map((b) => (b as { type: "text"; text: string }).text)
+      .join("")
+
+    const jsonText = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim()
+    const suggestions = JSON.parse(jsonText) as AISuggestion[]
+    return { suggestions }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error("[draftSuppliesWithAI]", msg)
+    return { error: `AI error: ${msg}` }
+  }
+}
+
+// ── Save AI Suggestions ───────────────────────────────────────────────────
+
+export async function saveSupplySuggestions(
+  craftId: string,
+  items: Array<{ name: string; unit: string; qty_per_guest: number | null; unit_cost: number | null }>
+): Promise<{ ok: true; count: number } | { error: string }> {
+  const supabase = await createSupabaseServerClient()
+
+  for (const item of items) {
+    const { data: supplyData, error: supplyError } = await supabase
+      .from("supplies")
+      .insert({
+        name: item.name,
+        unit: item.unit || null,
+        unit_cost: item.unit_cost,
+      })
+      .select("id")
+      .single()
+
+    if (supplyError) {
+      console.error("[saveSupplySuggestions] supply:", supplyError.message)
+      return { error: supplyError.message }
+    }
+
+    const { error: linkError } = await supabase.from("craft_supplies").insert({
+      craft_id: craftId,
+      supply_id: (supplyData as { id: string }).id,
+      qty_per_guest: item.qty_per_guest,
+    })
+
+    if (linkError) {
+      console.error("[saveSupplySuggestions] link:", linkError.message)
+      return { error: linkError.message }
+    }
+  }
+
+  revalidatePath(`/dashboard/crafts/${craftId}`)
+  return { ok: true, count: items.length }
+}
+
+// ── Photo Upload ──────────────────────────────────────────────────────────
+
+export async function uploadCraftPhoto(
+  craftId: string,
+  formData: FormData
+): Promise<{ ok: true; url: string } | { error: string }> {
+  const supabase = await createSupabaseServerClient()
+
+  const file = formData.get("file") as File | null
+  if (!file || file.size === 0) return { error: "No file provided" }
+
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg"
+  const path = `${craftId}/${Date.now()}.${ext}`
+  const buffer = await file.arrayBuffer()
+
+  const { error: uploadError } = await supabase.storage
+    .from("craft-images")
+    .upload(path, buffer, { contentType: file.type, upsert: false })
+
+  if (uploadError) {
+    console.error("[uploadCraftPhoto]", uploadError.message)
+    return { error: uploadError.message }
+  }
+
+  const { data: { publicUrl } } = supabase.storage
+    .from("craft-images")
+    .getPublicUrl(path)
+
+  const { data: craftData } = await supabase
+    .from("crafts")
+    .select("image_urls")
+    .eq("id", craftId)
+    .maybeSingle()
+
+  type ImgRow = { image_urls: string[] | null }
+  const current = ((craftData as unknown as ImgRow)?.image_urls ?? [])
+
+  const { error: updateError } = await supabase
+    .from("crafts")
+    .update({ image_urls: [...current, publicUrl] })
+    .eq("id", craftId)
+
+  if (updateError) {
+    console.error("[uploadCraftPhoto] update:", updateError.message)
+    return { error: updateError.message }
+  }
+
+  revalidatePath(`/dashboard/crafts/${craftId}`)
+  revalidatePath("/dashboard/crafts")
+  return { ok: true, url: publicUrl }
+}
+
+// ── Photo Remove ──────────────────────────────────────────────────────────
+
+export async function removeCraftPhoto(
+  craftId: string,
+  photoUrl: string
+): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createSupabaseServerClient()
+
+  const match = photoUrl.match(/\/craft-images\/(.+)$/)
+  if (match) {
+    await supabase.storage.from("craft-images").remove([match[1]])
+  }
+
+  const { data: craftData } = await supabase
+    .from("crafts")
+    .select("image_urls")
+    .eq("id", craftId)
+    .maybeSingle()
+
+  type ImgRow = { image_urls: string[] | null }
+  const current = ((craftData as unknown as ImgRow)?.image_urls ?? [])
+
+  const { error } = await supabase
+    .from("crafts")
+    .update({ image_urls: current.filter((u) => u !== photoUrl) })
+    .eq("id", craftId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/dashboard/crafts/${craftId}`)
+  revalidatePath("/dashboard/crafts")
   return { ok: true }
 }
 

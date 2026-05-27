@@ -3,6 +3,8 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import AddSupplyForm from "./_components/AddSupplyForm"
 import RemoveSupplyBtn from "./_components/RemoveSupplyBtn"
+import AIDraftPanel from "./_components/AIDraftPanel"
+import PhotoUpload from "./_components/PhotoUpload"
 import styles from "../crafts.module.css"
 
 type CraftRow = {
@@ -17,6 +19,7 @@ type CraftRow = {
   setup_notes: string | null
   teardown_notes: string | null
   is_active: boolean | null
+  image_urls: string[] | null
 }
 
 type CraftSupplyRow = {
@@ -49,7 +52,7 @@ export default async function CraftDetailPage({
     await Promise.all([
       supabase
         .from("crafts")
-        .select("id, name, description, category, skill_level, time_per_guest, min_guests, max_guests, setup_notes, teardown_notes, is_active")
+        .select("id, name, description, category, skill_level, time_per_guest, min_guests, max_guests, setup_notes, teardown_notes, is_active, image_urls")
         .eq("id", params.id)
         .maybeSingle(),
       supabase
@@ -250,11 +253,30 @@ export default async function CraftDetailPage({
             </table>
           )}
 
-          <AddSupplyForm
+          <div className={styles.supplyActions}>
+            <AddSupplyForm
+              craftId={craft.id}
+              allSupplies={allSupplies}
+              allVendors={vendors}
+              existingSupplyIds={existingSupplyIds}
+            />
+            <AIDraftPanel
+              craftId={craft.id}
+              craftName={craft.name}
+              category={craft.category}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Photos section */}
+      <div className={styles.photoSection}>
+        <div className={styles.craftDoubleRule} />
+        <div className={styles.photoSectionInner}>
+          <div className={styles.suppliesSectionTitle}>Photos</div>
+          <PhotoUpload
             craftId={craft.id}
-            allSupplies={allSupplies}
-            allVendors={vendors}
-            existingSupplyIds={existingSupplyIds}
+            imageUrls={craft.image_urls ?? []}
           />
         </div>
       </div>

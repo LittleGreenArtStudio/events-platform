@@ -22,6 +22,7 @@ type Craft = {
   min_guests: number | null
   max_guests: number | null
   is_active: boolean | null
+  image_urls: string[] | null
 }
 
 function skillClass(level: string | null, s: Record<string, string>) {
@@ -41,7 +42,7 @@ export default async function CraftLibraryPage({
 
   let query = supabase
     .from("crafts")
-    .select("id, name, category, skill_level, time_per_guest, min_guests, max_guests, is_active")
+    .select("id, name, category, skill_level, time_per_guest, min_guests, max_guests, is_active, image_urls")
     .order("name")
 
   if (activeCategory) query = query.eq("category", activeCategory)
@@ -101,6 +102,14 @@ export default async function CraftLibraryPage({
                 href={`/dashboard/crafts/${craft.id}`}
                 className={styles.craftRow}
               >
+                {craft.image_urls?.[0] && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={craft.image_urls[0]}
+                    alt=""
+                    className={styles.craftThumb}
+                  />
+                )}
                 <div className={styles.craftMain}>
                   <div className={styles.craftName}>{craft.name}</div>
                   <div className={styles.craftMeta}>
