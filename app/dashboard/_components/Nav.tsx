@@ -10,6 +10,7 @@ const NAV_ITEMS: { label: string; href: string | null }[] = [
   { label: "Craft Library", href: null },
   { label: "People", href: "/dashboard/people" },
   { label: "Tasks", href: null },
+  { label: "AI Copilot", href: "/dashboard/copilot" },
   { label: "Integrations", href: "/dashboard/integrations" },
 ]
 

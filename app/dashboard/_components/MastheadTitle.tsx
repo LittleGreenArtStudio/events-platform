@@ -8,6 +8,7 @@ export default function MastheadTitle() {
   const isEvents = pathname.startsWith("/dashboard/events")
   const isIntegrations = pathname.startsWith("/dashboard/integrations")
   const isPeople = pathname.startsWith("/dashboard/people")
+  const isCopilot = pathname.startsWith("/dashboard/copilot")
   return (
     <h1 className={styles.mastheadTitle}>
       {isEvents ? (
@@ -16,6 +17,8 @@ export default function MastheadTitle() {
         <em className={styles.mastheadTitleAccent}>Integrations</em>
       ) : isPeople ? (
         <em className={styles.mastheadTitleAccent}>People</em>
+      ) : isCopilot ? (
+        <>AI <em className={styles.mastheadTitleAccent}>Copilot</em></>
       ) : (
         <>
           Studio <em className={styles.mastheadTitleAccent}>HQ</em>

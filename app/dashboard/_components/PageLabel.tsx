@@ -11,6 +11,8 @@ export default function PageLabel() {
     ? "Integrations"
     : pathname.startsWith("/dashboard/people")
     ? "People"
+    : pathname.startsWith("/dashboard/copilot")
+    ? "AI Copilot"
     : "Studio HQ"
   return <span className={styles.mastheadPageLabel}>{label}</span>
 }
