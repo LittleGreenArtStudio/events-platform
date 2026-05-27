@@ -7,7 +7,6 @@ type StaffRow = {
   id: string
   first_name: string | null
   last_name: string | null
-  name: string | null
   role_title: string | null
   email: string | null
   phone: string | null
@@ -25,7 +24,7 @@ export default async function PeopleStaffPage() {
 
   const [staffResult, { count: clientCount }, { count: vendorCount }] =
     await Promise.all([
-      supabase.from("staff").select("*").order("name"),
+      supabase.from("staff").select("*").order("first_name"),
       supabase.from("clients").select("*", { count: "exact", head: true }),
       supabase.from("vendors").select("*", { count: "exact", head: true }),
     ])
@@ -48,9 +47,7 @@ export default async function PeopleStaffPage() {
         ) : (
           staff.map((s) => {
             const displayName =
-              [s.first_name, s.last_name].filter(Boolean).join(" ") ||
-              s.name ||
-              "—"
+              [s.first_name, s.last_name].filter(Boolean).join(" ") || "—"
             const meta = [s.role_title, s.email, s.phone].filter(Boolean).join(" · ")
             const rate = formatRate(s.hourly_rate)
             return (

@@ -4,13 +4,13 @@ import styles from "../crafts.module.css"
 
 const CATEGORIES = [
   "Visual Arts",
-  "Candles",
-  "Floral & Botanical",
-  "Textiles",
+  "Candle Making",
+  "Floral & Outdoor",
+  "Textiles & Fibercraft",
+  "Jewelry & Metals",
   "Wellness",
-  "Jewelry",
-  "Seasonal",
-  "Other",
+  "All Things Autumn",
+  "Winter Holidays",
 ]
 
 export default async function NewCraftPage({

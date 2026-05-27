@@ -7,7 +7,6 @@ type StaffDetail = {
   id: string
   first_name: string | null
   last_name: string | null
-  name: string | null
   role_title: string | null
   email: string | null
   phone: string | null
@@ -38,9 +37,7 @@ export default async function StaffProfilePage({
   const member = data as unknown as StaffDetail
 
   const displayName =
-    [member.first_name, member.last_name].filter(Boolean).join(" ") ||
-    member.name ||
-    "Staff Member"
+    [member.first_name, member.last_name].filter(Boolean).join(" ") || "Staff Member"
 
   const sub = [member.role_title, member.email].filter(Boolean).join(" · ")
 

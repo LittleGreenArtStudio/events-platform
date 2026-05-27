@@ -48,7 +48,6 @@ export async function createStaff(formData: FormData) {
     .insert({
       first_name: firstName || null,
       last_name: lastName || null,
-      name: [firstName, lastName].filter(Boolean).join(" ") || "New Staff Member",
       email: (formData.get("email") as string) || null,
       phone: (formData.get("phone") as string) || null,
       role_title: (formData.get("role_title") as string) || null,
