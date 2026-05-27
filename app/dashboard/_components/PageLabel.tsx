@@ -13,6 +13,8 @@ export default function PageLabel() {
     ? "People"
     : pathname.startsWith("/dashboard/copilot")
     ? "AI Copilot"
+    : pathname.startsWith("/dashboard/crafts")
+    ? "Craft Library"
     : "Studio HQ"
   return <span className={styles.mastheadPageLabel}>{label}</span>
 }

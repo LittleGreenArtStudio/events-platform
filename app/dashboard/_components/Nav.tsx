@@ -7,7 +7,7 @@ import styles from "../dashboard.module.css"
 const NAV_ITEMS: { label: string; href: string | null }[] = [
   { label: "Studio HQ", href: "/dashboard" },
   { label: "Events", href: "/dashboard/events" },
-  { label: "Craft Library", href: null },
+  { label: "Craft Library", href: "/dashboard/crafts" },
   { label: "People", href: "/dashboard/people" },
   { label: "Tasks", href: null },
   { label: "AI Copilot", href: "/dashboard/copilot" },
