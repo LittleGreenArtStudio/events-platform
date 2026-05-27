@@ -14,6 +14,8 @@ import AddThreadForm from "./AddThreadForm"
 import InvoicePanel from "./InvoicePanel"
 import EventBriefPanel from "./EventBriefPanel"
 import EstimatePanel from "./EstimatePanel"
+import PhotoBoard from "./PhotoBoard"
+import type { PhotoEntry } from "../photo-actions"
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -30,6 +32,7 @@ type ValidTab =
   | "invoice"
   | "brief"
   | "estimate"
+  | "photos"
 
 type ClientRef = { first_name: string | null; last_name: string | null }
 
@@ -46,6 +49,7 @@ type EventDetail = {
   deposit_amount: number | null
   deposit_paid: boolean | null
   notes: string | null
+  photo_urls: unknown[] | null
   clients: ClientRef | null
 }
 
@@ -142,6 +146,7 @@ const TABS: { key: ValidTab; label: string }[] = [
   { key: "tasks", label: "Tasks" },
   { key: "timeline", label: "Timeline" },
   { key: "threads", label: "Threads" },
+  { key: "photos", label: "Photos" },
   { key: "invoice", label: "Invoice" },
   { key: "estimate", label: "Estimate" },
   { key: "brief", label: "Brief" },
@@ -187,6 +192,24 @@ function daysUntil(dateStr: string): number {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   return Math.round((event.getTime() - today.getTime()) / 86400000)
+}
+
+function normalizePhotoUrls(raw: unknown[] | null): PhotoEntry[] {
+  if (!raw?.length) return []
+  return raw.flatMap((item) => {
+    if (typeof item === "string") {
+      return [{ url: item, tag: "Other", uploaded_at: new Date(0).toISOString() }]
+    }
+    if (item && typeof item === "object" && "url" in item) {
+      const e = item as Record<string, unknown>
+      return [{
+        url: String(e.url ?? ""),
+        tag: String(e.tag ?? "Other"),
+        uploaded_at: String(e.uploaded_at ?? new Date(0).toISOString()),
+      }]
+    }
+    return []
+  })
 }
 
 function daysLabel(n: number): string {
@@ -253,7 +276,7 @@ export default async function EventFolder({
     supabase
       .from(table)
       .select(
-        "id, title, status, event_date, start_time, end_time, venue_address, guest_count, budget, deposit_amount, deposit_paid, notes, clients(first_name, last_name)"
+        "id, title, status, event_date, start_time, end_time, venue_address, guest_count, budget, deposit_amount, deposit_paid, notes, photo_urls, clients(first_name, last_name)"
       )
       .eq("id", id)
       .maybeSingle(),
@@ -761,6 +784,15 @@ export default async function EventFolder({
               <AddThreadForm eventKind={eventKind} eventId={id} />
             </div>
           </div>
+        )}
+
+        {/* ── Photos ── */}
+        {activeTab === "photos" && (
+          <PhotoBoard
+            eventKind={eventKind}
+            eventId={id}
+            initialPhotos={normalizePhotoUrls(event.photo_urls)}
+          />
         )}
 
         {/* ── Invoice ── */}
