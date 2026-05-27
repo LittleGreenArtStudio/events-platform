@@ -9,6 +9,7 @@ type CraftRow = {
   id: string
   name: string
   description: string | null
+  category: string | null
   skill_level: string | null
   time_per_guest: number | null
   min_guests: number | null
@@ -48,7 +49,7 @@ export default async function CraftDetailPage({
     await Promise.all([
       supabase
         .from("crafts")
-        .select("id, name, description, skill_level, time_per_guest, min_guests, max_guests, setup_notes, teardown_notes, is_active")
+        .select("id, name, description, category, skill_level, time_per_guest, min_guests, max_guests, setup_notes, teardown_notes, is_active")
         .eq("id", params.id)
         .maybeSingle(),
       supabase
@@ -103,6 +104,9 @@ export default async function CraftDetailPage({
       <div className={styles.craftHeader}>
         <div className={styles.craftTypeRow}>
           <span className={styles.craftTypeLabel}>Craft</span>
+          {craft.category && (
+            <span className={styles.categoryLabel}>{craft.category}</span>
+          )}
           {craft.skill_level && (
             <span
               className={`${styles.skillPill} ${
@@ -137,6 +141,12 @@ export default async function CraftDetailPage({
         <div>
           <div className={styles.infoSectionTitle}>Details</div>
 
+          <div className={styles.infoItem}>
+            <span className={styles.infoLabel}>Category</span>
+            <span className={styles.infoValue}>
+              {craft.category ?? <span className={styles.infoValueMuted}>—</span>}
+            </span>
+          </div>
           <div className={styles.infoItem}>
             <span className={styles.infoLabel}>Skill Level</span>
             <span className={styles.infoValue}>{skillLabel(craft.skill_level)}</span>

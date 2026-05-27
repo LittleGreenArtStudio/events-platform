@@ -129,6 +129,56 @@
   color: var(--muted-2);
 }
 
+/* ── Category Filter Bar ──────────────────────────────── */
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0 48px;
+  border-bottom: 1px solid var(--line);
+}
+
+.filterTab {
+  padding: 11px 16px;
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.12s;
+  white-space: nowrap;
+}
+
+.filterTab:hover {
+  color: var(--ink);
+}
+
+.filterTabActive {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
+/* ── Category Label ───────────────────────────────────── */
+.categoryLabel {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  background: var(--paper-3);
+  padding: 2px 7px;
+  border-radius: 2px;
+}
+
+.craftMetaSep {
+  margin: 0 4px;
+  color: var(--line-2);
+}
+
 /* ── Empty State ──────────────────────────────────────── */
 .emptyState {
   padding: 40px 48px;

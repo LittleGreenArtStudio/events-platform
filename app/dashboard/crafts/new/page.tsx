@@ -2,6 +2,17 @@ import Link from "next/link"
 import { createCraft } from "../actions"
 import styles from "../crafts.module.css"
 
+const CATEGORIES = [
+  "Visual Arts",
+  "Candles",
+  "Floral & Botanical",
+  "Textiles",
+  "Wellness",
+  "Jewelry",
+  "Seasonal",
+  "Other",
+]
+
 export default async function NewCraftPage({
   searchParams,
 }: {
@@ -47,6 +58,15 @@ export default async function NewCraftPage({
           </div>
 
           <div className={styles.formRow}>
+            <div className={styles.formField}>
+              <label className={styles.formLabel}>Category</label>
+              <select name="category" className={styles.formSelect} defaultValue="">
+                <option value="">— Select —</option>
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
             <div className={styles.formField}>
               <label className={styles.formLabel}>Skill Level</label>
               <select name="skill_level" className={styles.formSelect} defaultValue="">

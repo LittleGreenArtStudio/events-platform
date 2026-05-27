@@ -18,6 +18,7 @@ export async function createCraft(formData: FormData) {
     .insert({
       name: (formData.get("name") as string).trim() || "New Craft",
       description: (formData.get("description") as string).trim() || null,
+      category: (formData.get("category") as string) || null,
       skill_level: (formData.get("skill_level") as string) || null,
       time_per_guest: timeRaw ? Number(timeRaw) : null,
       min_guests: minRaw ? Number(minRaw) : null,

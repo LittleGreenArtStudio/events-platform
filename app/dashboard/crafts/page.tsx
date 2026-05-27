@@ -2,9 +2,21 @@ import { createSupabaseServerClient } from "@/lib/auth"
 import Link from "next/link"
 import styles from "./crafts.module.css"
 
+const CATEGORIES = [
+  "Visual Arts",
+  "Candles",
+  "Floral & Botanical",
+  "Textiles",
+  "Wellness",
+  "Jewelry",
+  "Seasonal",
+  "Other",
+]
+
 type Craft = {
   id: string
   name: string
+  category: string | null
   skill_level: string | null
   time_per_guest: number | null
   min_guests: number | null
@@ -19,18 +31,27 @@ function skillClass(level: string | null, s: Record<string, string>) {
   return s.skillUnknown
 }
 
-export default async function CraftLibraryPage() {
+export default async function CraftLibraryPage({
+  searchParams,
+}: {
+  searchParams: { category?: string }
+}) {
   const supabase = await createSupabaseServerClient()
+  const activeCategory = searchParams.category ?? ""
 
-  const { data } = await supabase
+  let query = supabase
     .from("crafts")
-    .select("id, name, skill_level, time_per_guest, min_guests, max_guests, is_active")
+    .select("id, name, category, skill_level, time_per_guest, min_guests, max_guests, is_active")
     .order("name")
 
+  if (activeCategory) query = query.eq("category", activeCategory)
+
+  const { data } = await query
   const crafts = (data ?? []) as unknown as Craft[]
 
   return (
     <div className={styles.page}>
+      {/* Header */}
       <div className={styles.listHeader}>
         <h1 className={styles.listTitle}>Craft Library</h1>
         <Link href="/dashboard/crafts/new" className={styles.newBtn}>
@@ -38,9 +59,31 @@ export default async function CraftLibraryPage() {
         </Link>
       </div>
 
+      {/* Category filter tabs */}
+      <div className={styles.filterBar}>
+        <Link
+          href="/dashboard/crafts"
+          className={`${styles.filterTab} ${!activeCategory ? styles.filterTabActive : ""}`}
+        >
+          All
+        </Link>
+        {CATEGORIES.map((cat) => (
+          <Link
+            key={cat}
+            href={`/dashboard/crafts?category=${encodeURIComponent(cat)}`}
+            className={`${styles.filterTab} ${activeCategory === cat ? styles.filterTabActive : ""}`}
+          >
+            {cat}
+          </Link>
+        ))}
+      </div>
+
+      {/* Craft list */}
       <div className={styles.craftList}>
         {crafts.length === 0 ? (
-          <p className={styles.emptyState}>No crafts yet — add your first one.</p>
+          <p className={styles.emptyState}>
+            {activeCategory ? `No crafts in "${activeCategory}" yet.` : "No crafts yet — add your first one."}
+          </p>
         ) : (
           crafts.map((craft) => {
             const metaParts: string[] = []
@@ -60,9 +103,15 @@ export default async function CraftLibraryPage() {
               >
                 <div className={styles.craftMain}>
                   <div className={styles.craftName}>{craft.name}</div>
-                  {metaParts.length > 0 && (
-                    <div className={styles.craftMeta}>{metaParts.join(" · ")}</div>
-                  )}
+                  <div className={styles.craftMeta}>
+                    {craft.category && (
+                      <span className={styles.categoryLabel}>{craft.category}</span>
+                    )}
+                    {craft.category && metaParts.length > 0 && (
+                      <span className={styles.craftMetaSep}>·</span>
+                    )}
+                    {metaParts.join(" · ")}
+                  </div>
                 </div>
                 <div className={styles.craftRight}>
                   {craft.skill_level && (
