@@ -164,7 +164,7 @@ Be precise. Round buffered quantities UP. Show all math.`
 
   try {
     const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-6",
       max_tokens: 2048,
       messages: [{ role: "user", content: prompt }],
     })
@@ -176,8 +176,9 @@ Be precise. Round buffered quantities UP. Show all math.`
 
     return { text }
   } catch (err) {
-    console.error("[estimateSupplies] Claude error:", err)
-    return { error: "Claude API error — check server logs" }
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error("[estimateSupplies] Claude error:", msg)
+    return { error: `Claude API error: ${msg}` }
   }
 }
 

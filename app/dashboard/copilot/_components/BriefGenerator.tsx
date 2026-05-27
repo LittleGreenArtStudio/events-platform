@@ -66,7 +66,8 @@ export default function BriefGenerator({ events }: { events: EventOption[] }) {
       setIsDone(true)
     } catch (err) {
       if ((err as Error).name !== "AbortError") {
-        setError("Stream error — check server logs")
+        const msg = err instanceof Error ? err.message : String(err)
+        setError(`Stream error: ${msg}`)
       }
     } finally {
       setIsStreaming(false)
