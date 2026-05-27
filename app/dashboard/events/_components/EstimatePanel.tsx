@@ -360,6 +360,14 @@ export default function EstimatePanel({
   const depositAmount = grandTotal * (depositPctNum / 100)
   const balance = grandTotal - depositAmount
 
+  // Proportional markup distribution for client view — each section shows
+  // its share of clientTotal so no overhead line is visible to the client.
+  const markupRatio = totalCost > 0 ? clientTotal / totalCost : 1
+  const clientMatAmt  = materialsTotal * markupRatio
+  const clientStaffAmt = staffTotal * markupRatio
+  const clientTravelAmt = (isOffsite ? travelTotal : 0) * markupRatio
+  const clientAddonsAmt = addonsTotal * markupRatio
+
   // ── Date formatting ───────────────────────────────────
   const [yr, mo, dy] = eventDate.split("-").map(Number)
   const formattedDate = new Date(yr, mo - 1, dy).toLocaleDateString("en-US", {
@@ -380,6 +388,18 @@ export default function EstimatePanel({
         return { ...l, qty, total: qty * l.unitCost }
       })
     )
+  }
+
+  // Re-runs autoMaterials from current event craft data, preserving any
+  // manually-added lines. Fixes stale materials when crafts are added/removed
+  // after an estimate was first saved.
+  const handleRefreshMaterials = () => {
+    const fresh = autoMaterials(eventCrafts, gc, bufferPct)
+    setMaterialLines((prev) => {
+      const custom = prev.filter((l) => !l.isAuto)
+      return [...fresh, ...custom]
+    })
+    setSaved(false)
   }
 
   const handleSave = async () => {
@@ -602,6 +622,13 @@ export default function EstimatePanel({
               <span className={styles.estFieldLabel} style={{ marginLeft: 4 }}>
                 (applied to auto-populated quantities)
               </span>
+              <button
+                className={styles.estRefreshBtn}
+                onClick={handleRefreshMaterials}
+                title="Re-pull all supplies from event crafts"
+              >
+                ↺ Refresh from crafts
+              </button>
             </div>
 
             <table className={styles.estTable}>
@@ -1091,20 +1118,20 @@ export default function EstimatePanel({
                 <td className={styles.estClientRowDesc}>
                   <span className={styles.estClientRowName}>Materials &amp; Supplies</span>
                 </td>
-                <td className={styles.estClientRowAmt}>{fmt(materialsTotal)}</td>
+                <td className={styles.estClientRowAmt}>{fmt(clientMatAmt)}</td>
               </tr>
               <tr className={styles.estClientRow}>
                 <td className={styles.estClientRowDesc}>
                   <span className={styles.estClientRowName}>Instruction &amp; Staff</span>
                 </td>
-                <td className={styles.estClientRowAmt}>{fmt(staffTotal)}</td>
+                <td className={styles.estClientRowAmt}>{fmt(clientStaffAmt)}</td>
               </tr>
-              {isOffsite && (
+              {isOffsite && clientTravelAmt > 0 && (
                 <tr className={styles.estClientRow}>
                   <td className={styles.estClientRowDesc}>
                     <span className={styles.estClientRowName}>Travel</span>
                   </td>
-                  <td className={styles.estClientRowAmt}>{fmt(travelTotal)}</td>
+                  <td className={styles.estClientRowAmt}>{fmt(clientTravelAmt)}</td>
                 </tr>
               )}
               {addonsTotal > 0 && (
@@ -1112,7 +1139,7 @@ export default function EstimatePanel({
                   <td className={styles.estClientRowDesc}>
                     <span className={styles.estClientRowName}>Add-Ons &amp; Services</span>
                   </td>
-                  <td className={styles.estClientRowAmt}>{fmt(addonsTotal)}</td>
+                  <td className={styles.estClientRowAmt}>{fmt(clientAddonsAmt)}</td>
                 </tr>
               )}
             </tbody>
