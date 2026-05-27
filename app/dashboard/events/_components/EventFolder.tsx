@@ -1,6 +1,18 @@
 import { createSupabaseServerClient } from "@/lib/auth"
 import Link from "next/link"
+import { notFound } from "next/navigation"
 import styles from "../folder.module.css"
+import MilestoneToggle from "./MilestoneToggle"
+import AddEventCraftForm from "./AddEventCraftForm"
+import RemoveEventCraftBtn from "./RemoveEventCraftBtn"
+import AddEventStaffForm from "./AddEventStaffForm"
+import RemoveEventStaffBtn from "./RemoveEventStaffBtn"
+import ConfirmStaffToggle from "./ConfirmStaffToggle"
+import TaskToggle from "./TaskToggle"
+import AddTaskForm from "./AddTaskForm"
+import AddThreadForm from "./AddThreadForm"
+import InvoicePanel from "./InvoicePanel"
+import EventBriefPanel from "./EventBriefPanel"
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -30,17 +42,55 @@ type EventDetail = {
   guest_count: number | null
   budget: number | null
   deposit_amount: number | null
+  deposit_paid: boolean | null
   notes: string | null
   clients: ClientRef | null
 }
 
-type CraftRef = { name: string; description: string | null }
+type SupplyRef = { id: string; name: string; unit: string | null; unit_cost: number | null }
 
-type CraftRow = {
+type CraftSupplyRef = { qty_per_guest: number | null; supplies: SupplyRef | null }
+
+type CraftRef = {
   id: string
-  quantity: number | null
+  name: string
+  description: string | null
+  skill_level: string | null
+  category: string | null
+  craft_supplies: CraftSupplyRef[]
+}
+
+type EventCraftRow = {
+  id: string
+  craft_id: string
+  guest_count_override: number | null
   notes: string | null
   crafts: CraftRef | null
+}
+
+type CraftOption = { id: string; name: string; category: string | null }
+
+type StaffRef = {
+  id: string
+  first_name: string | null
+  last_name: string | null
+  role_title: string | null
+  hourly_rate: number | null
+}
+
+type EventStaffRow = {
+  id: string
+  staff_id: string
+  confirmed: boolean | null
+  hours_worked: number | null
+  staff: StaffRef | null
+}
+
+type StaffOption = {
+  id: string
+  first_name: string | null
+  last_name: string | null
+  role_title: string | null
 }
 
 type TaskRow = {
@@ -51,7 +101,36 @@ type TaskRow = {
   due_date: string | null
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────
+type ThreadRow = {
+  id: string
+  type: string | null
+  subject: string | null
+  body: string | null
+  sender: string | null
+  created_at: string
+}
+
+type LineItemRow = {
+  id: string
+  description: string
+  quantity: number | null
+  unit_price: number | null
+}
+
+type InvoiceRow = {
+  id: string
+  status: string
+  tax_rate: number | null
+  due_date: string | null
+  notes: string | null
+  subtotal: number | null
+  total: number | null
+  amount_paid: number | null
+  created_at: string
+  invoice_line_items: LineItemRow[]
+}
+
+// ── Constants ────────────────────────────────────────────────────────────
 
 const TABS: { key: ValidTab; label: string }[] = [
   { key: "overview", label: "Overview" },
@@ -64,6 +143,8 @@ const TABS: { key: ValidTab; label: string }[] = [
   { key: "invoice", label: "Invoice" },
   { key: "brief", label: "Brief" },
 ]
+
+// ── Helpers ──────────────────────────────────────────────────────────────
 
 function formatLongDate(dateStr: string): string {
   const [year, month, day] = dateStr.split("-").map(Number)
@@ -84,6 +165,17 @@ function formatTime(timeStr: string): string {
 
 function formatCurrency(val: number): string {
   return val.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })
+}
+
+function formatDateTime(iso: string): string {
+  const d = new Date(iso)
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  })
 }
 
 function daysUntil(dateStr: string): number {
@@ -124,29 +216,6 @@ function statusLabel(status: string): string {
   return map[status] ?? status
 }
 
-function getMilestones(
-  status: string,
-  depositAmount: number | null
-): { label: string; done: boolean }[] {
-  const order = ["inquiry", "proposal_sent", "confirmed", "in_progress", "completed"]
-  const idx = order.indexOf(status)
-  return [
-    { label: "Inquiry received", done: idx >= 0 },
-    { label: "Proposal sent", done: idx >= 1 },
-    { label: "Deposit received", done: depositAmount != null && depositAmount > 0 },
-    { label: "Confirmed", done: idx >= 2 },
-    { label: "Event complete", done: status === "completed" },
-  ]
-}
-
-function formatShortDate(dateStr: string): string {
-  const [year, month, day] = dateStr.split("-").map(Number)
-  return new Date(year, month - 1, day).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  })
-}
-
 // ── Main Component ────────────────────────────────────────────────────────
 
 export default async function EventFolder({
@@ -158,47 +227,86 @@ export default async function EventFolder({
   id: string
   tab: string
 }) {
-  const activeTab = (
-    TABS.some((t) => t.key === tab) ? tab : "overview"
-  ) as ValidTab
+  const activeTab = (TABS.some((t) => t.key === tab) ? tab : "overview") as ValidTab
 
   const supabase = await createSupabaseServerClient()
 
   const table = eventKind === "offsite" ? "offsite_events" : "in_studio_events"
-  const craftTable =
-    eventKind === "offsite" ? "offsite_event_crafts" : "in_studio_event_crafts"
-  const eventFkColumn =
-    eventKind === "offsite" ? "offsite_event_id" : "in_studio_event_id"
+  const craftTable = eventKind === "offsite" ? "offsite_event_crafts" : "in_studio_event_crafts"
+  const staffTable = eventKind === "offsite" ? "offsite_event_staff" : "in_studio_event_staff"
+  const eventFkColumn = eventKind === "offsite" ? "offsite_event_id" : "in_studio_event_id"
 
-  const [eventResult, craftsResult, tasksResult] = await Promise.all([
+  const [
+    eventResult,
+    eventCraftsResult,
+    allCraftsResult,
+    eventStaffResult,
+    allStaffResult,
+    tasksResult,
+    threadsResult,
+    invoicesResult,
+  ] = await Promise.all([
     supabase
       .from(table)
       .select(
-        "id, title, status, event_date, start_time, end_time, venue_address, guest_count, budget, deposit_amount, notes, clients(first_name, last_name)"
+        "id, title, status, event_date, start_time, end_time, venue_address, guest_count, budget, deposit_amount, deposit_paid, notes, clients(first_name, last_name)"
       )
       .eq("id", id)
       .maybeSingle(),
     supabase
       .from(craftTable)
-      .select("id, quantity, notes, crafts(name, description)")
-      .eq(eventFkColumn, id),
+      .select(
+        "id, craft_id, guest_count_override, notes, crafts(id, name, description, skill_level, category, craft_supplies(qty_per_guest, supplies(id, name, unit, unit_cost)))"
+      )
+      .eq("event_id", id)
+      .order("id"),
+    supabase
+      .from("crafts")
+      .select("id, name, category")
+      .eq("is_active", true)
+      .order("name"),
+    supabase
+      .from(staffTable)
+      .select("id, staff_id, confirmed, hours_worked, staff(id, first_name, last_name, role_title, hourly_rate)")
+      .eq("event_id", id)
+      .order("id"),
+    supabase
+      .from("staff")
+      .select("id, first_name, last_name, role_title")
+      .eq("is_active", true)
+      .order("first_name"),
     supabase
       .from("tasks")
       .select("id, title, status, priority, due_date")
       .eq(eventFkColumn, id)
       .order("due_date", { nullsFirst: false }),
+    supabase
+      .from("threads")
+      .select("id, type, subject, body, sender, created_at")
+      .eq(eventFkColumn, id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("invoices")
+      .select(
+        "id, status, tax_rate, due_date, notes, subtotal, total, amount_paid, created_at, invoice_line_items(id, description, quantity, unit_price)"
+      )
+      .eq(eventFkColumn, id)
+      .order("created_at", { ascending: false }),
   ])
 
-  if (!eventResult.data) {
-    return <p className={styles.notFound}>Event not found.</p>
-  }
+  if (!eventResult.data) notFound()
 
   const event = eventResult.data as unknown as EventDetail
-  const crafts = (craftsResult.data ?? []) as unknown as CraftRow[]
-  const tasks = (tasksResult.data ?? []) as TaskRow[]
+  const eventCrafts = (eventCraftsResult.data ?? []) as unknown as EventCraftRow[]
+  const allCrafts = (allCraftsResult.data ?? []) as unknown as CraftOption[]
+  const eventStaff = (eventStaffResult.data ?? []) as unknown as EventStaffRow[]
+  const allStaff = (allStaffResult.data ?? []) as unknown as StaffOption[]
+  const tasks = (tasksResult.data ?? []) as unknown as TaskRow[]
+  const threads = (threadsResult.data ?? []) as unknown as ThreadRow[]
+  const invoices = (invoicesResult.data ?? []) as unknown as InvoiceRow[]
 
-  const days = daysUntil(event.event_date)
   const today = new Date().toISOString().split("T")[0]
+  const days = daysUntil(event.event_date)
   const kindLabel = eventKind === "offsite" ? "Offsite Event" : "In-Studio Event"
   const backHref = `/dashboard/events?tab=${eventKind}`
 
@@ -215,7 +323,42 @@ export default async function EventFolder({
     .filter(Boolean)
     .join(" · ")
 
-  const milestones = getMilestones(event.status, event.deposit_amount)
+  // Milestones
+  const STATUS_ORDER = ["inquiry", "proposal_sent", "confirmed", "in_progress", "completed"]
+  const statusIdx = STATUS_ORDER.indexOf(event.status)
+
+  const milestones = [
+    {
+      key: "inquiry_received",
+      label: "Inquiry received",
+      done: statusIdx >= 0,
+    },
+    {
+      key: "proposal_sent",
+      label: "Proposal sent",
+      done: statusIdx >= 1,
+      targetStatus: "proposal_sent",
+    },
+    {
+      key: "deposit_received",
+      label: "Deposit received",
+      done: event.deposit_paid === true,
+      isDeposit: true,
+      depositPaid: event.deposit_paid === true,
+    },
+    {
+      key: "confirmed",
+      label: "Confirmed",
+      done: statusIdx >= 2,
+      targetStatus: "confirmed",
+    },
+    {
+      key: "event_complete",
+      label: "Event complete",
+      done: event.status === "completed",
+      targetStatus: "completed",
+    },
+  ]
 
   const infoItems = [
     {
@@ -245,10 +388,59 @@ export default async function EventFolder({
     },
     {
       label: "Deposit",
-      value:
-        event.deposit_amount != null ? formatCurrency(event.deposit_amount) : "—",
+      value: event.deposit_amount != null ? formatCurrency(event.deposit_amount) : "—",
     },
   ]
+
+  // Supplies calculation
+  const suppliesMap = new Map<
+    string,
+    {
+      supplyId: string
+      name: string
+      unit: string | null
+      unitCost: number | null
+      totalQty: number
+      totalCost: number
+      crafts: string[]
+    }
+  >()
+
+  for (const ec of eventCrafts) {
+    const guestCount = ec.guest_count_override ?? event.guest_count ?? 0
+    const craftName = ec.crafts?.name ?? "Unknown craft"
+
+    for (const cs of ec.crafts?.craft_supplies ?? []) {
+      const s = cs.supplies
+      if (!s) continue
+      const baseQty = (cs.qty_per_guest ?? 0) * guestCount
+      const bufferedQty = Math.ceil(baseQty * 1.15)
+      const cost = bufferedQty * (s.unit_cost ?? 0)
+
+      const existing = suppliesMap.get(s.id)
+      if (existing) {
+        existing.totalQty += bufferedQty
+        existing.totalCost += cost
+        if (!existing.crafts.includes(craftName)) existing.crafts.push(craftName)
+      } else {
+        suppliesMap.set(s.id, {
+          supplyId: s.id,
+          name: s.name,
+          unit: s.unit,
+          unitCost: s.unit_cost,
+          totalQty: bufferedQty,
+          totalCost: cost,
+          crafts: [craftName],
+        })
+      }
+    }
+  }
+
+  const suppliesRows = Array.from(suppliesMap.values())
+  const grandTotalCost = suppliesRows.reduce((sum, r) => sum + r.totalCost, 0)
+
+  const existingCraftIds = eventCrafts.map((ec) => ec.craft_id)
+  const existingStaffIds = eventStaff.map((es) => es.staff_id)
 
   return (
     <>
@@ -277,9 +469,6 @@ export default async function EventFolder({
         </h2>
         <p className={styles.folderSubtitle}>{subtitle}</p>
         <div className={styles.folderActions}>
-          <span className={styles.actionBtn}>Edit</span>
-          <span className={styles.actionBtn}>New Task</span>
-          <span className={styles.actionBtn}>Print Brief</span>
           <span className={styles.folderDaysUntil}>{daysLabel(days)}</span>
         </div>
       </div>
@@ -293,9 +482,7 @@ export default async function EventFolder({
           <Link
             key={key}
             href={`/dashboard/events/${eventKind}/${id}?tab=${key}`}
-            className={`${styles.folderTab} ${
-              activeTab === key ? styles.folderTabActive : ""
-            }`}
+            className={`${styles.folderTab} ${activeTab === key ? styles.folderTabActive : ""}`}
           >
             {label}
           </Link>
@@ -304,9 +491,10 @@ export default async function EventFolder({
 
       {/* ── Tab Content ── */}
       <div className={styles.folderContent}>
+
+        {/* ── Overview ── */}
         {activeTab === "overview" && (
           <div className={styles.overviewGrid}>
-            {/* Left — Info pairs */}
             <div>
               <div className={styles.infoListTitle}>Event Details</div>
               {infoItems.map(({ label, value }) => (
@@ -316,135 +504,267 @@ export default async function EventFolder({
                 </div>
               ))}
             </div>
-            {/* Right — Milestone checklist */}
             <div>
               <div className={styles.milestonesTitle}>Milestones</div>
-              {milestones.map(({ label, done }) => (
-                <div key={label} className={styles.milestone}>
-                  <div
-                    className={`${styles.milestoneCheck} ${
-                      done ? styles.milestoneCheckDone : ""
-                    }`}
-                  >
-                    {done && (
-                      <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                        <path
-                          d="M1 4L3.5 6.5L9 1"
-                          stroke="white"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    )}
-                  </div>
-                  <span
-                    className={`${styles.milestoneLabel} ${
-                      !done ? styles.milestoneLabelPending : ""
-                    }`}
-                  >
-                    {label}
-                  </span>
-                </div>
+              {milestones.map((m) => (
+                <MilestoneToggle
+                  key={m.key}
+                  eventKind={eventKind}
+                  eventId={id}
+                  milestoneKey={m.key}
+                  label={m.label}
+                  done={m.done}
+                  targetStatus={m.targetStatus}
+                  isDeposit={m.isDeposit}
+                  depositPaid={m.depositPaid}
+                />
               ))}
             </div>
           </div>
         )}
 
+        {/* ── Crafts ── */}
         {activeTab === "crafts" && (
-          <div className={styles.craftList}>
-            {crafts.length === 0 ? (
+          <div>
+            {eventCrafts.length === 0 ? (
               <p className={styles.emptyState}>No crafts added yet.</p>
             ) : (
-              crafts.map((craft) => (
-                <div key={craft.id} className={styles.craftRow}>
-                  <div>
-                    <div className={styles.craftName}>
-                      {craft.crafts?.name ?? "Unknown craft"}
-                    </div>
-                    {craft.crafts?.description && (
-                      <div className={styles.craftMeta}>
-                        {craft.crafts.description}
+              <div className={styles.craftList}>
+                {eventCrafts.map((ec) => {
+                  const c = ec.crafts
+                  const guestCount = ec.guest_count_override ?? event.guest_count
+                  return (
+                    <div key={ec.id} className={styles.craftRow}>
+                      <div className={styles.craftRowMain}>
+                        <div className={styles.craftName}>{c?.name ?? "Unknown craft"}</div>
+                        <div className={styles.craftMeta}>
+                          {c?.category && (
+                            <span className={styles.craftMetaTag}>{c.category}</span>
+                          )}
+                          {c?.skill_level && (
+                            <span className={`${styles.craftMetaTag} ${styles[`skill_${c.skill_level}`]}`}>
+                              {c.skill_level}
+                            </span>
+                          )}
+                          {guestCount != null && (
+                            <span className={styles.craftMetaTag}>{guestCount} guests</span>
+                          )}
+                          {ec.notes && (
+                            <span className={styles.craftNotes}>{ec.notes}</span>
+                          )}
+                        </div>
                       </div>
-                    )}
-                    {craft.notes && (
-                      <div className={styles.craftMeta}>{craft.notes}</div>
-                    )}
-                  </div>
-                  <div className={styles.craftQty}>
-                    {craft.quantity != null ? `×${craft.quantity}` : "—"}
-                  </div>
-                </div>
-              ))
+                      <RemoveEventCraftBtn
+                        eventKind={eventKind}
+                        eventId={id}
+                        craftEventId={ec.id}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+            <div className={styles.tabActions}>
+              <AddEventCraftForm
+                eventKind={eventKind}
+                eventId={id}
+                allCrafts={allCrafts}
+                existingCraftIds={existingCraftIds}
+                guestCount={event.guest_count}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* ── Supplies ── */}
+        {activeTab === "supplies" && (
+          <div>
+            {suppliesRows.length === 0 ? (
+              <p className={styles.emptyState}>
+                {eventCrafts.length === 0
+                  ? "Add crafts to this event to see supply requirements."
+                  : "No supply data attached to the crafts on this event."}
+              </p>
+            ) : (
+              <>
+                <table className={styles.suppliesTable}>
+                  <thead className={styles.suppliesTableHead}>
+                    <tr>
+                      <th>Supply</th>
+                      <th>Unit</th>
+                      <th>Qty (+ 15% buffer)</th>
+                      <th>Unit Cost</th>
+                      <th>Est. Total</th>
+                      <th>From Craft(s)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {suppliesRows.map((row) => (
+                      <tr key={row.supplyId} className={styles.supplyRow}>
+                        <td className={styles.supplyName}>{row.name}</td>
+                        <td className={styles.supplyUnit}>{row.unit ?? "—"}</td>
+                        <td className={styles.supplyQty}>{row.totalQty}</td>
+                        <td className={styles.supplyCost}>
+                          {row.unitCost != null ? `$${row.unitCost.toFixed(2)}` : "—"}
+                        </td>
+                        <td className={styles.supplyTotal}>${row.totalCost.toFixed(2)}</td>
+                        <td className={styles.supplyCrafts}>{row.crafts.join(", ")}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className={styles.suppliesTotalRow}>
+                      <td colSpan={4} className={styles.suppliesTotalLabel}>
+                        Grand total (estimated)
+                      </td>
+                      <td className={styles.suppliesTotalValue}>${grandTotalCost.toFixed(2)}</td>
+                      <td />
+                    </tr>
+                  </tfoot>
+                </table>
+                <p className={styles.suppliesNote}>
+                  Quantities include a 15% buffer over guest count. Unit costs from supply library.
+                </p>
+              </>
             )}
           </div>
         )}
 
+        {/* ── Staff ── */}
+        {activeTab === "staff" && (
+          <div>
+            {eventStaff.length === 0 ? (
+              <p className={styles.emptyState}>No staff assigned yet.</p>
+            ) : (
+              <div className={styles.staffList}>
+                {eventStaff.map((es) => {
+                  const s = es.staff
+                  return (
+                    <div key={es.id} className={styles.staffRow}>
+                      <div className={styles.staffRowMain}>
+                        <div className={styles.staffName}>
+                          {s
+                            ? [s.first_name, s.last_name].filter(Boolean).join(" ")
+                            : "Unknown"}
+                        </div>
+                        <div className={styles.staffMeta}>
+                          {s?.role_title && (
+                            <span className={styles.staffRole}>{s.role_title}</span>
+                          )}
+                          {s?.hourly_rate != null && (
+                            <span className={styles.staffRate}>${s.hourly_rate}/hr</span>
+                          )}
+                          {es.hours_worked != null && (
+                            <span className={styles.staffHours}>{es.hours_worked} hrs logged</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className={styles.staffRowActions}>
+                        <ConfirmStaffToggle
+                          eventKind={eventKind}
+                          eventId={id}
+                          staffEventId={es.id}
+                          confirmed={es.confirmed === true}
+                        />
+                        <RemoveEventStaffBtn
+                          eventKind={eventKind}
+                          eventId={id}
+                          staffEventId={es.id}
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+            <div className={styles.tabActions}>
+              <AddEventStaffForm
+                eventKind={eventKind}
+                eventId={id}
+                allStaff={allStaff}
+                existingStaffIds={existingStaffIds}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* ── Tasks ── */}
         {activeTab === "tasks" && (
           <div>
             {tasks.length === 0 ? (
               <p className={styles.emptyState}>No tasks for this event.</p>
             ) : (
-              tasks.map((task) => {
-                const isDone =
-                  task.status === "done" || task.status === "completed"
-                const isOverdue =
-                  !isDone && !!task.due_date && task.due_date < today
-                return (
-                  <div key={task.id} className={styles.taskItem}>
-                    <div
-                      className={`${styles.taskCheckbox} ${
-                        isDone ? styles.taskCheckboxDone : ""
-                      }`}
-                    >
-                      {isDone && (
-                        <svg
-                          width="10"
-                          height="8"
-                          viewBox="0 0 10 8"
-                          fill="none"
-                        >
-                          <path
-                            d="M1 4L3.5 6.5L9 1"
-                            stroke="white"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      )}
-                    </div>
-                    <div
-                      className={`${styles.taskTitle} ${
-                        isDone ? styles.taskTitleDone : ""
-                      }`}
-                    >
-                      {task.title}
-                    </div>
-                    {task.due_date && (
-                      <div
-                        className={`${styles.taskDue} ${
-                          isOverdue ? styles.taskDueOverdue : ""
-                        }`}
-                      >
-                        {formatShortDate(task.due_date)}
-                      </div>
-                    )}
-                  </div>
-                )
-              })
+              tasks.map((task) => (
+                <TaskToggle
+                  key={task.id}
+                  eventKind={eventKind}
+                  eventId={id}
+                  taskId={task.id}
+                  currentStatus={task.status}
+                  title={task.title}
+                  dueDate={task.due_date}
+                  priority={task.priority}
+                  today={today}
+                />
+              ))
             )}
+            <div className={styles.tabActions}>
+              <AddTaskForm eventKind={eventKind} eventId={id} />
+            </div>
           </div>
         )}
 
-        {(activeTab === "supplies" ||
-          activeTab === "staff" ||
-          activeTab === "timeline" ||
-          activeTab === "threads" ||
-          activeTab === "invoice" ||
-          activeTab === "brief") && (
-          <p className={styles.comingSoon}>Coming soon.</p>
+        {/* ── Timeline (placeholder) ── */}
+        {activeTab === "timeline" && (
+          <p className={styles.comingSoon}>Timeline coming soon.</p>
         )}
+
+        {/* ── Threads ── */}
+        {activeTab === "threads" && (
+          <div>
+            {threads.length === 0 ? (
+              <p className={styles.emptyState}>No notes or messages yet.</p>
+            ) : (
+              <div className={styles.threadList}>
+                {threads.map((t) => (
+                  <div key={t.id} className={styles.threadItem}>
+                    <div className={styles.threadMeta}>
+                      <span className={`${styles.threadTypePill} ${styles[`threadType_${t.type ?? "note"}`]}`}>
+                        {t.type ?? "note"}
+                      </span>
+                      {t.subject && (
+                        <span className={styles.threadSubject}>{t.subject}</span>
+                      )}
+                      <span className={styles.threadDate}>{formatDateTime(t.created_at)}</span>
+                      {t.sender && (
+                        <span className={styles.threadSender}>{t.sender}</span>
+                      )}
+                    </div>
+                    {t.body && <div className={styles.threadBody}>{t.body}</div>}
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className={styles.tabActions}>
+              <AddThreadForm eventKind={eventKind} eventId={id} />
+            </div>
+          </div>
+        )}
+
+        {/* ── Invoice ── */}
+        {activeTab === "invoice" && (
+          <InvoicePanel
+            eventKind={eventKind}
+            eventId={id}
+            invoices={invoices}
+          />
+        )}
+
+        {/* ── Brief ── */}
+        {activeTab === "brief" && (
+          <EventBriefPanel eventKind={eventKind} eventId={id} />
+        )}
+
       </div>
     </>
   )

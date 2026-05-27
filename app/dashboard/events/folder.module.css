@@ -405,3 +405,693 @@
   font-size: 18px;
   color: var(--muted-2);
 }
+
+/* ── Tab Actions (bottom of each tab) ────────────────── */
+.tabActions {
+  margin-top: 24px;
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+}
+
+/* ── Shared Add Form ──────────────────────────────────── */
+.addBtn {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  background: none;
+  border: 1px solid var(--line-2);
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.addBtn:hover {
+  color: var(--ink);
+  border-color: var(--rule);
+}
+
+.addForm {
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  padding: 20px;
+  max-width: 560px;
+}
+
+.addFormTitle {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 14px;
+}
+
+.addFormFields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.addFormRow {
+  display: flex;
+  gap: 10px;
+}
+
+.addSelect {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  width: 100%;
+  outline: none;
+}
+
+.addSelect:focus {
+  border-color: var(--accent);
+}
+
+.addInput {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  width: 100%;
+  outline: none;
+}
+
+.addInput:focus {
+  border-color: var(--accent);
+}
+
+.addTextarea {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  width: 100%;
+  outline: none;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.addTextarea:focus {
+  border-color: var(--accent);
+}
+
+.addFormActions {
+  display: flex;
+  gap: 10px;
+}
+
+.addSubmitBtn {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper);
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  padding: 9px 18px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.addSubmitBtn:hover:not(:disabled) {
+  background: var(--ink-2);
+  border-color: var(--ink-2);
+}
+
+.addSubmitBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.addCancelBtn {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  background: none;
+  border: 1px solid var(--line-2);
+  padding: 9px 18px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.addCancelBtn:hover {
+  color: var(--ink);
+}
+
+.addError {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--red);
+  margin: 8px 0 0;
+}
+
+/* ── Remove button (×) ────────────────────────────────── */
+.removeBtn {
+  font-size: 18px;
+  line-height: 1;
+  color: var(--muted-2);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+
+.removeBtn:hover:not(:disabled) {
+  color: var(--red);
+}
+
+.removeBtn:disabled {
+  opacity: 0.4;
+}
+
+/* ── Crafts Tab ───────────────────────────────────────── */
+.craftRowMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.craftMetaTag {
+  display: inline-block;
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 2px;
+  background: var(--paper-3);
+  color: var(--muted-2);
+  margin-right: 6px;
+  margin-top: 5px;
+}
+
+.skill_beginner  { background: rgba(93, 122, 78, 0.1); color: var(--green); }
+.skill_intermediate { background: rgba(184, 137, 58, 0.1); color: var(--amber); }
+.skill_advanced { background: rgba(166, 77, 63, 0.1); color: var(--red); }
+
+.craftNotes {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--muted);
+  font-style: italic;
+  display: block;
+  margin-top: 4px;
+}
+
+/* ── Supplies Tab ─────────────────────────────────────── */
+.suppliesTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--sans);
+  font-size: 12px;
+}
+
+.suppliesTableHead th {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  text-align: left;
+  padding: 8px 12px 8px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.supplyRow td {
+  padding: 12px 12px 12px 0;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.supplyName { font-family: var(--serif); font-size: 16px; color: var(--ink); }
+.supplyUnit { color: var(--muted); }
+.supplyQty  { color: var(--ink); font-weight: 500; }
+.supplyCost { color: var(--muted); }
+.supplyTotal { color: var(--ink); font-weight: 500; }
+.supplyCrafts { color: var(--muted); font-size: 11px; }
+
+.suppliesTotalRow td {
+  padding: 14px 12px 14px 0;
+  border-top: 2px solid var(--rule);
+}
+
+.suppliesTotalLabel {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+.suppliesTotalValue {
+  font-family: var(--serif);
+  font-size: 20px;
+  color: var(--ink);
+  font-weight: 400;
+}
+
+.suppliesNote {
+  margin-top: 16px;
+  font-family: var(--sans);
+  font-size: 10px;
+  color: var(--muted-2);
+  font-style: italic;
+}
+
+/* ── Staff Tab ────────────────────────────────────────── */
+.staffList {
+  display: flex;
+  flex-direction: column;
+}
+
+.staffRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.staffRowMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.staffName {
+  font-family: var(--serif);
+  font-size: 20px;
+  color: var(--ink);
+}
+
+.staffMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.staffRole {
+  font-family: var(--sans);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.staffRate {
+  font-family: var(--sans);
+  font-size: 10px;
+  color: var(--muted-2);
+}
+
+.staffHours {
+  font-family: var(--sans);
+  font-size: 10px;
+  color: var(--accent);
+}
+
+.staffRowActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.confirmToggle {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border: 1px solid var(--line-2);
+  background: none;
+  color: var(--muted-2);
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s;
+}
+
+.confirmToggle:hover {
+  color: var(--green);
+  border-color: var(--green);
+}
+
+.confirmToggleOn {
+  background: rgba(93, 122, 78, 0.1);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+/* ── Tasks Tab ────────────────────────────────────────── */
+.priorityPill {
+  font-family: var(--sans);
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.priority_low     { background: var(--paper-3); color: var(--muted-2); }
+.priority_high    { background: rgba(184, 137, 58, 0.12); color: var(--amber); }
+.priority_urgent  { background: rgba(166, 77, 63, 0.12); color: var(--red); }
+
+/* ── Threads Tab ──────────────────────────────────────── */
+.threadList {
+  display: flex;
+  flex-direction: column;
+}
+
+.threadItem {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.threadMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.threadTypePill {
+  font-family: var(--sans);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.threadType_note  { background: var(--paper-3); color: var(--muted); }
+.threadType_email { background: rgba(93, 122, 78, 0.1); color: var(--green); }
+.threadType_call  { background: rgba(184, 137, 58, 0.1); color: var(--amber); }
+.threadType_text  { background: rgba(100, 140, 180, 0.1); color: #4a7ab5; }
+
+.threadSubject {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.threadDate {
+  font-family: var(--sans);
+  font-size: 10px;
+  color: var(--muted-2);
+  margin-left: auto;
+}
+
+.threadSender {
+  font-family: var(--sans);
+  font-size: 10px;
+  color: var(--muted-2);
+}
+
+.threadBody {
+  font-family: var(--serif);
+  font-size: 16px;
+  color: var(--ink);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* ── Invoice Tab ──────────────────────────────────────── */
+.invoiceTabBar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.invoiceTabBtn {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  border: 1px solid var(--line-2);
+  background: none;
+  color: var(--muted-2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.invoiceTabBtnActive {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.invoiceCard {
+  max-width: 700px;
+}
+
+.invoiceHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.invoiceMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.invoiceStatusPill {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 2px;
+}
+
+.invoiceStatus_draft { background: var(--paper-3); color: var(--muted-2); }
+.invoiceStatus_sent  { background: rgba(184, 137, 58, 0.12); color: var(--amber); }
+.invoiceStatus_paid  { background: rgba(93, 122, 78, 0.12); color: var(--green); }
+.invoiceStatus_void  { background: var(--paper-3); color: var(--muted-2); text-decoration: line-through; }
+
+.invoiceDue {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.invoiceStatusBtns {
+  display: flex;
+  gap: 8px;
+}
+
+.invoiceActionBtn {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  border: 1px solid var(--rule);
+  background: none;
+  color: var(--muted-2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.invoiceActionBtn:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+.invoiceVoidBtn {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  border: 1px solid var(--line-2);
+  background: none;
+  color: var(--muted-2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.invoiceVoidBtn:hover {
+  color: var(--red);
+  border-color: var(--red);
+}
+
+.lineItemsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--sans);
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.lineItemsHead th {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  text-align: left;
+  padding: 8px 12px 8px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.lineItemRow td {
+  padding: 11px 12px 11px 0;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.lineItemDesc { font-family: var(--serif); font-size: 16px; color: var(--ink); }
+.lineItemNum  { color: var(--ink); text-align: right; padding-right: 16px !important; }
+
+.invoiceTotalsRow td {
+  padding: 10px 12px 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.invoiceTotalsLabel {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+.invoiceTotalsValue {
+  font-family: var(--serif);
+  font-size: 18px;
+  color: var(--ink);
+  text-align: right;
+  padding-right: 16px !important;
+}
+
+.invoiceGrandTotal .invoiceTotalsLabel { color: var(--ink); }
+.invoiceGrandTotal .invoiceTotalsValue { font-size: 22px; font-weight: 500; }
+
+.invoicePaidValue { color: var(--green); }
+
+.addLineForm {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--line);
+}
+
+.addLineFields {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.addLineDesc { flex: 1; }
+.addLineNum  { width: 90px; flex-shrink: 0; }
+
+.invoiceNotes {
+  margin-top: 20px;
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--muted);
+  font-style: italic;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+/* ── Brief Tab ────────────────────────────────────────── */
+.briefDesc {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 20px;
+  max-width: 560px;
+}
+
+.briefActions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.briefActionBtn {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  border: 1px solid var(--line-2);
+  background: none;
+  color: var(--muted-2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.briefActionBtn:hover {
+  color: var(--ink);
+  border-color: var(--rule);
+}
+
+.briefText {
+  font-family: var(--mono, "Courier New", monospace);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink);
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  padding: 24px 28px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-width: 800px;
+}
+
+.briefCursor {
+  display: inline-block;
+  animation: blink 0.9s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
