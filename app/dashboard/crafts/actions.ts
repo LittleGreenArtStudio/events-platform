@@ -204,31 +204,13 @@ export async function saveSupplySuggestions(
 
 // ── Photo Upload ──────────────────────────────────────────────────────────
 
-export async function uploadCraftPhoto(
+// Storage upload happens client-side in PhotoUpload.tsx; this action
+// only appends the resulting public URL to the craft's image_urls array.
+export async function addCraftPhotoUrl(
   craftId: string,
-  formData: FormData
-): Promise<{ ok: true; url: string } | { error: string }> {
+  url: string
+): Promise<{ ok: true } | { error: string }> {
   const supabase = await createSupabaseServerClient()
-
-  const file = formData.get("file") as File | null
-  if (!file || file.size === 0) return { error: "No file provided" }
-
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg"
-  const path = `${craftId}/${Date.now()}.${ext}`
-  const buffer = await file.arrayBuffer()
-
-  const { error: uploadError } = await supabase.storage
-    .from("craft-images")
-    .upload(path, buffer, { contentType: file.type, upsert: false })
-
-  if (uploadError) {
-    console.error("[uploadCraftPhoto]", uploadError.message)
-    return { error: uploadError.message }
-  }
-
-  const { data: { publicUrl } } = supabase.storage
-    .from("craft-images")
-    .getPublicUrl(path)
 
   const { data: craftData } = await supabase
     .from("crafts")
@@ -241,17 +223,17 @@ export async function uploadCraftPhoto(
 
   const { error: updateError } = await supabase
     .from("crafts")
-    .update({ image_urls: [...current, publicUrl] })
+    .update({ image_urls: [...current, url] })
     .eq("id", craftId)
 
   if (updateError) {
-    console.error("[uploadCraftPhoto] update:", updateError.message)
+    console.error("[addCraftPhotoUrl]", updateError.message)
     return { error: updateError.message }
   }
 
   revalidatePath(`/dashboard/crafts/${craftId}`)
   revalidatePath("/dashboard/crafts")
-  return { ok: true, url: publicUrl }
+  return { ok: true }
 }
 
 // ── Photo Remove ──────────────────────────────────────────────────────────

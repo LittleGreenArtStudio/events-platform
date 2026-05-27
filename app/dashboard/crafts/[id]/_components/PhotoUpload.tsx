@@ -2,7 +2,8 @@
 
 import { useRef, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { uploadCraftPhoto, removeCraftPhoto } from "../../actions"
+import { createBrowserClient } from "@supabase/ssr"
+import { addCraftPhotoUrl, removeCraftPhoto } from "../../actions"
 import styles from "../../crafts.module.css"
 
 export default function PhotoUpload({
@@ -22,15 +23,35 @@ export default function PhotoUpload({
   const handleFiles = async (files: FileList) => {
     setError(null)
     setUploading(true)
+
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+
     for (const file of Array.from(files)) {
-      const fd = new FormData()
-      fd.set("file", file)
-      const res = await uploadCraftPhoto(craftId, fd)
+      const path = `${craftId}/${Date.now()}-${file.name}`
+
+      const { error: uploadError } = await supabase.storage
+        .from("craft-images")
+        .upload(path, file, { contentType: file.type, upsert: false })
+
+      if (uploadError) {
+        setError(`Upload failed: ${uploadError.message}`)
+        break
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("craft-images")
+        .getPublicUrl(path)
+
+      const res = await addCraftPhotoUrl(craftId, publicUrl)
       if ("error" in res) {
         setError(res.error)
         break
       }
     }
+
     setUploading(false)
     if (fileRef.current) fileRef.current.value = ""
     router.refresh()
