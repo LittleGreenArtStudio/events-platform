@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { createBrowserClient } from "@supabase/ssr"
 import Image from "next/image"
 import { addCraftPhotoUrl, removeCraftPhoto } from "../../actions"
-import { compressImage } from "@/lib/compress-image"
+import { compressImageTo } from "@/lib/compress-image"
 import { BLUR_DATA_URL } from "@/lib/blur-data-url"
 import styles from "../../crafts.module.css"
 
@@ -33,7 +33,7 @@ export default function PhotoUpload({
 
     for (const file of Array.from(files)) {
       setUploadStatus("optimising")
-      const compressed = await compressImage(file)
+      const compressed = await compressImageTo(file, 400, 0.6)
 
       setUploadStatus("uploading")
       const baseName = compressed.name.replace(/[^a-z0-9_.-]/gi, "-")

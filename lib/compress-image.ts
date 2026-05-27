@@ -1,4 +1,8 @@
-export async function compressImage(file: File): Promise<File> {
+export async function compressImageTo(
+  file: File,
+  maxPx: number,
+  quality: number
+): Promise<File> {
   // GIF: preserve animation, skip canvas round-trip
   if (file.type === "image/gif") return file
 
@@ -15,14 +19,13 @@ export async function compressImage(file: File): Promise<File> {
 
     img.onload = () => {
       URL.revokeObjectURL(objectUrl)
-      const maxSize = 1200
       let { width, height } = img
-      if (width > height && width > maxSize) {
-        height = (height * maxSize) / width
-        width = maxSize
-      } else if (height > maxSize) {
-        width = (width * maxSize) / height
-        height = maxSize
+      if (width > height && width > maxPx) {
+        height = (height * maxPx) / width
+        width = maxPx
+      } else if (height > maxPx) {
+        width = (width * maxPx) / height
+        height = maxPx
       }
       canvas.width = width
       canvas.height = height
@@ -37,10 +40,14 @@ export async function compressImage(file: File): Promise<File> {
           )
         },
         "image/webp",
-        0.82
+        quality
       )
     }
 
     img.src = objectUrl
   })
+}
+
+export function compressImage(file: File): Promise<File> {
+  return compressImageTo(file, 1200, 0.82)
 }

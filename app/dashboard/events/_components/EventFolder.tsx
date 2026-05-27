@@ -204,6 +204,7 @@ function normalizePhotoUrls(raw: unknown[] | null): PhotoEntry[] {
       const e = item as Record<string, unknown>
       return [{
         url: String(e.url ?? ""),
+        thumb: e.thumb ? String(e.thumb) : undefined,
         tag: String(e.tag ?? "Other"),
         uploaded_at: String(e.uploaded_at ?? new Date(0).toISOString()),
       }]

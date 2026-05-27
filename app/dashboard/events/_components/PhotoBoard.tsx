@@ -6,7 +6,7 @@ import { createBrowserClient } from "@supabase/ssr"
 import Image from "next/image"
 import { updateEventPhotoUrls } from "../photo-actions"
 import type { PhotoEntry } from "../photo-actions"
-import { compressImage } from "@/lib/compress-image"
+import { compressImageTo } from "@/lib/compress-image"
 import { BLUR_DATA_URL } from "@/lib/blur-data-url"
 import styles from "../folder.module.css"
 
@@ -86,34 +86,51 @@ export default function PhotoBoard({
     for (let i = 0; i < fileArray.length; i++) {
       const file = fileArray[i]
 
+      // Compress both variants in parallel
       setOptimising(true)
       setUploading(false)
-      const compressed = await compressImage(file)
+      const [thumb, full] = await Promise.all([
+        compressImageTo(file, 400, 0.6),
+        compressImageTo(file, 1200, 0.82),
+      ])
       setOptimising(false)
 
       setUploading(true)
       setUploadLabel(`${i + 1} / ${fileArray.length}`)
 
-      const baseName = compressed.name.replace(/[^a-z0-9_.-]/gi, "-")
-      const storagePath = `${eventKind}/${eventId}/${Date.now()}-${baseName}`
+      const ts = Date.now()
+      const baseName = thumb.name.replace(/[^a-z0-9_.-]/gi, "-")
+      const thumbPath = `${eventKind}/${eventId}/thumbs/${ts}-${baseName}`
+      const fullPath  = `${eventKind}/${eventId}/full/${ts}-${baseName}`
 
-      const { error: uploadError } = await supabase.storage
+      const { error: thumbErr } = await supabase.storage
         .from("event-photos")
-        .upload(storagePath, compressed, { contentType: compressed.type, upsert: false })
+        .upload(thumbPath, thumb, { contentType: thumb.type, upsert: false })
 
-      if (uploadError) {
-        setError(`Upload failed: ${uploadError.message}`)
+      if (thumbErr) {
+        setError(`Upload failed: ${thumbErr.message}`)
         setUploading(false)
         setUploadLabel("")
         if (fileRef.current) fileRef.current.value = ""
         return
       }
 
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("event-photos").getPublicUrl(storagePath)
+      const { error: fullErr } = await supabase.storage
+        .from("event-photos")
+        .upload(fullPath, full, { contentType: full.type, upsert: false })
 
-      added.push({ url: publicUrl, tag: uploadTag, uploaded_at: new Date().toISOString() })
+      if (fullErr) {
+        setError(`Upload failed: ${fullErr.message}`)
+        setUploading(false)
+        setUploadLabel("")
+        if (fileRef.current) fileRef.current.value = ""
+        return
+      }
+
+      const thumbUrl = supabase.storage.from("event-photos").getPublicUrl(thumbPath).data.publicUrl
+      const fullUrl  = supabase.storage.from("event-photos").getPublicUrl(fullPath).data.publicUrl
+
+      added.push({ url: fullUrl, thumb: thumbUrl, tag: uploadTag, uploaded_at: new Date().toISOString() })
     }
 
     const merged = [...photos, ...added]
@@ -248,7 +265,7 @@ export default function PhotoBoard({
                 onClick={() => setLightboxUrl(photo.url)}
               >
                 <Image
-                  src={photo.url}
+                  src={photo.thumb ?? photo.url}
                   alt={photo.tag}
                   fill
                   sizes="400px"

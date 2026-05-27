@@ -7,6 +7,7 @@ type EventKind = "offsite" | "in-studio"
 
 export type PhotoEntry = {
   url: string
+  thumb?: string
   tag: string
   uploaded_at: string
 }
