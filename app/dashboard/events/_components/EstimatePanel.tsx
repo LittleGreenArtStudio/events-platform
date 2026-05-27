@@ -90,8 +90,16 @@ const uid = () => `e-${++_uid}`
 const fmt = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 })
 
+// Rounds to the nearest $5 / $25 / $50 depending on magnitude so
+// client-facing numbers feel deliberate rather than coincidental.
+function smartRound(n: number): number {
+  if (n < 500) return Math.round(n / 5) * 5
+  if (n <= 2000) return Math.round(n / 25) * 25
+  return Math.round(n / 50) * 50
+}
+
 const fmtClient = (n: number) =>
-  Math.round(n).toLocaleString("en-US", {
+  smartRound(n).toLocaleString("en-US", {
     style: "currency",
     currency: "USD",
     minimumFractionDigits: 0,
@@ -995,7 +1003,7 @@ export default function EstimatePanel({
                     <input
                       type="number"
                       className={styles.estClientPriceInput}
-                      value={clientMatOverride ?? String(Math.round(autoClientMat))}
+                      value={clientMatOverride ?? String(smartRound(autoClientMat))}
                       min={0}
                       step="1"
                       onChange={(e) => { setClientMatOverride(e.target.value); setSaved(false) }}
@@ -1009,7 +1017,7 @@ export default function EstimatePanel({
                     <input
                       type="number"
                       className={styles.estClientPriceInput}
-                      value={clientStaffOverride ?? String(Math.round(autoClientStaff))}
+                      value={clientStaffOverride ?? String(smartRound(autoClientStaff))}
                       min={0}
                       step="1"
                       onChange={(e) => { setClientStaffOverride(e.target.value); setSaved(false) }}
@@ -1024,7 +1032,7 @@ export default function EstimatePanel({
                       <input
                         type="number"
                         className={styles.estClientPriceInput}
-                        value={clientTravelOverride ?? String(Math.round(autoClientTravel))}
+                        value={clientTravelOverride ?? String(smartRound(autoClientTravel))}
                         min={0}
                         step="1"
                         onChange={(e) => { setClientTravelOverride(e.target.value); setSaved(false) }}
@@ -1040,7 +1048,7 @@ export default function EstimatePanel({
                       <input
                         type="number"
                         className={styles.estClientPriceInput}
-                        value={clientAddonsOverride ?? String(Math.round(autoClientAddons))}
+                        value={clientAddonsOverride ?? String(smartRound(autoClientAddons))}
                         min={0}
                         step="1"
                         onChange={(e) => { setClientAddonsOverride(e.target.value); setSaved(false) }}
