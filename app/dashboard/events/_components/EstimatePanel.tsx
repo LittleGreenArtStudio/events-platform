@@ -90,6 +90,14 @@ const uid = () => `e-${++_uid}`
 const fmt = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 })
 
+const fmtClient = (n: number) =>
+  Math.round(n).toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  })
+
 function autoMaterials(
   crafts: EventCraftForEstimate[],
   guestCount: number,
@@ -285,6 +293,13 @@ export default function EstimatePanel({
   // ── Buffer ────────────────────────────────────────────
   const [bufferPct, setBufferPct] = useState(15)
 
+  // ── Client-price overrides ────────────────────────────
+  // null = auto-computed from markup; string = manually set by Victoria
+  const [clientMatOverride, setClientMatOverride] = useState<string | null>(null)
+  const [clientStaffOverride, setClientStaffOverride] = useState<string | null>(null)
+  const [clientTravelOverride, setClientTravelOverride] = useState<string | null>(null)
+  const [clientAddonsOverride, setClientAddonsOverride] = useState<string | null>(null)
+
   // ── Line items ────────────────────────────────────────
   const [materialLines, setMaterialLines] = useState<MaterialLine[]>(() =>
     estimate?.materials_lines?.length
@@ -349,24 +364,33 @@ export default function EstimatePanel({
   const taxNum = parseFloat(taxRate) || 0
   const depositPctNum = parseFloat(depositPct) || 50
 
-  const clientTotal =
+  // Auto client total before any per-section overrides
+  const autoClientTotal =
     pricingMode === "per_guest" && perGuestNum > 0
       ? perGuestNum * gc
       : totalCost * (1 + markupNum / 100)
+
+  // Proportional distribution of auto total across sections
+  const autoMarkupRatio = totalCost > 0 ? autoClientTotal / totalCost : 1
+  const autoClientMat    = materialsTotal * autoMarkupRatio
+  const autoClientStaff  = staffTotal * autoMarkupRatio
+  const autoClientTravel = (isOffsite ? travelTotal : 0) * autoMarkupRatio
+  const autoClientAddons = addonsTotal * autoMarkupRatio
+
+  // Effective client-facing amounts (manual override beats auto)
+  const clientMatAmt    = clientMatOverride    !== null ? (parseFloat(clientMatOverride)    || 0) : autoClientMat
+  const clientStaffAmt  = clientStaffOverride  !== null ? (parseFloat(clientStaffOverride)  || 0) : autoClientStaff
+  const clientTravelAmt = clientTravelOverride !== null ? (parseFloat(clientTravelOverride) || 0) : autoClientTravel
+  const clientAddonsAmt = clientAddonsOverride !== null ? (parseFloat(clientAddonsOverride) || 0) : autoClientAddons
+
+  // clientTotal is now the sum of the four effective amounts
+  const clientTotal = clientMatAmt + clientStaffAmt + clientTravelAmt + clientAddonsAmt
   const profit = clientTotal - totalCost
   const backCalcMarkup = totalCost > 0 ? ((clientTotal / totalCost - 1) * 100) : 0
   const taxAmount = clientTotal * (taxNum / 100)
   const grandTotal = clientTotal + taxAmount
   const depositAmount = grandTotal * (depositPctNum / 100)
   const balance = grandTotal - depositAmount
-
-  // Proportional markup distribution for client view — each section shows
-  // its share of clientTotal so no overhead line is visible to the client.
-  const markupRatio = totalCost > 0 ? clientTotal / totalCost : 1
-  const clientMatAmt  = materialsTotal * markupRatio
-  const clientStaffAmt = staffTotal * markupRatio
-  const clientTravelAmt = (isOffsite ? travelTotal : 0) * markupRatio
-  const clientAddonsAmt = addonsTotal * markupRatio
 
   // ── Date formatting ───────────────────────────────────
   const [yr, mo, dy] = eventDate.split("-").map(Number)
@@ -378,6 +402,25 @@ export default function EstimatePanel({
   })
 
   // ── Handlers ──────────────────────────────────────────
+
+  const clearClientOverrides = () => {
+    setClientMatOverride(null)
+    setClientStaffOverride(null)
+    setClientTravelOverride(null)
+    setClientAddonsOverride(null)
+  }
+
+  const handleMarkupChange = (val: string) => {
+    setMarkupPct(val)
+    clearClientOverrides()
+    setSaved(false)
+  }
+
+  const handlePerGuestChange = (val: string) => {
+    setPerGuestPrice(val)
+    clearClientOverrides()
+    setSaved(false)
+  }
 
   const handleBufferChange = (val: number) => {
     setBufferPct(val)
@@ -937,31 +980,78 @@ export default function EstimatePanel({
             <div className={styles.estMarginTitle}>Margin &amp; Pricing</div>
             <div className={styles.estMarginGrid}>
 
-              {/* Cost breakdown */}
+              {/* Cost breakdown with editable client-facing amounts */}
               <div className={styles.estCostBreakdown}>
+                <div className={styles.estCostRowHeader}>
+                  <span />
+                  <span className={styles.estCostColHead}>Internal</span>
+                  <span className={styles.estCostColHead}>Client $</span>
+                </div>
+
                 <div className={styles.estCostRow}>
                   <span>Materials</span>
                   <span>{fmt(materialsTotal)}</span>
+                  <span className={styles.estClientPriceCol}>
+                    <input
+                      type="number"
+                      className={styles.estClientPriceInput}
+                      value={clientMatOverride ?? String(Math.round(autoClientMat))}
+                      min={0}
+                      step="1"
+                      onChange={(e) => { setClientMatOverride(e.target.value); setSaved(false) }}
+                    />
+                  </span>
                 </div>
                 <div className={styles.estCostRow}>
                   <span>Staff</span>
                   <span>{fmt(staffTotal)}</span>
+                  <span className={styles.estClientPriceCol}>
+                    <input
+                      type="number"
+                      className={styles.estClientPriceInput}
+                      value={clientStaffOverride ?? String(Math.round(autoClientStaff))}
+                      min={0}
+                      step="1"
+                      onChange={(e) => { setClientStaffOverride(e.target.value); setSaved(false) }}
+                    />
+                  </span>
                 </div>
                 {isOffsite && (
                   <div className={styles.estCostRow}>
                     <span>Travel</span>
                     <span>{fmt(travelTotal)}</span>
+                    <span className={styles.estClientPriceCol}>
+                      <input
+                        type="number"
+                        className={styles.estClientPriceInput}
+                        value={clientTravelOverride ?? String(Math.round(autoClientTravel))}
+                        min={0}
+                        step="1"
+                        onChange={(e) => { setClientTravelOverride(e.target.value); setSaved(false) }}
+                      />
+                    </span>
                   </div>
                 )}
                 {addonsTotal > 0 && (
                   <div className={styles.estCostRow}>
                     <span>Add-Ons</span>
                     <span>{fmt(addonsTotal)}</span>
+                    <span className={styles.estClientPriceCol}>
+                      <input
+                        type="number"
+                        className={styles.estClientPriceInput}
+                        value={clientAddonsOverride ?? String(Math.round(autoClientAddons))}
+                        min={0}
+                        step="1"
+                        onChange={(e) => { setClientAddonsOverride(e.target.value); setSaved(false) }}
+                      />
+                    </span>
                   </div>
                 )}
                 <div className={`${styles.estCostRow} ${styles.estCostTotalRow}`}>
                   <span>Total Cost</span>
                   <span>{fmt(totalCost)}</span>
+                  <span />
                 </div>
               </div>
 
@@ -970,13 +1060,13 @@ export default function EstimatePanel({
                 <div className={styles.estModeToggle}>
                   <button
                     className={`${styles.estModeBtn} ${pricingMode === "custom" ? styles.estModeBtnActive : ""}`}
-                    onClick={() => setPricingMode("custom")}
+                    onClick={() => { setPricingMode("custom"); clearClientOverrides(); setSaved(false) }}
                   >
                     Markup %
                   </button>
                   <button
                     className={`${styles.estModeBtn} ${pricingMode === "per_guest" ? styles.estModeBtnActive : ""}`}
-                    onClick={() => setPricingMode("per_guest")}
+                    onClick={() => { setPricingMode("per_guest"); clearClientOverrides(); setSaved(false) }}
                   >
                     Per Guest
                   </button>
@@ -990,7 +1080,7 @@ export default function EstimatePanel({
                       className={styles.estSmallInput}
                       value={markupPct}
                       min={0}
-                      onChange={(e) => { setMarkupPct(e.target.value); setSaved(false) }}
+                      onChange={(e) => handleMarkupChange(e.target.value)}
                     />
                   </div>
                 ) : (
@@ -1003,7 +1093,7 @@ export default function EstimatePanel({
                       min={0}
                       step="0.01"
                       placeholder="0.00"
-                      onChange={(e) => { setPerGuestPrice(e.target.value); setSaved(false) }}
+                      onChange={(e) => handlePerGuestChange(e.target.value)}
                     />
                     {gc > 0 && <span className={styles.estFieldLabel}>× {gc} guests</span>}
                   </div>
@@ -1118,20 +1208,20 @@ export default function EstimatePanel({
                 <td className={styles.estClientRowDesc}>
                   <span className={styles.estClientRowName}>Materials &amp; Supplies</span>
                 </td>
-                <td className={styles.estClientRowAmt}>{fmt(clientMatAmt)}</td>
+                <td className={styles.estClientRowAmt}>{fmtClient(clientMatAmt)}</td>
               </tr>
               <tr className={styles.estClientRow}>
                 <td className={styles.estClientRowDesc}>
                   <span className={styles.estClientRowName}>Instruction &amp; Staff</span>
                 </td>
-                <td className={styles.estClientRowAmt}>{fmt(clientStaffAmt)}</td>
+                <td className={styles.estClientRowAmt}>{fmtClient(clientStaffAmt)}</td>
               </tr>
               {isOffsite && clientTravelAmt > 0 && (
                 <tr className={styles.estClientRow}>
                   <td className={styles.estClientRowDesc}>
                     <span className={styles.estClientRowName}>Travel</span>
                   </td>
-                  <td className={styles.estClientRowAmt}>{fmt(clientTravelAmt)}</td>
+                  <td className={styles.estClientRowAmt}>{fmtClient(clientTravelAmt)}</td>
                 </tr>
               )}
               {addonsTotal > 0 && (
@@ -1139,24 +1229,24 @@ export default function EstimatePanel({
                   <td className={styles.estClientRowDesc}>
                     <span className={styles.estClientRowName}>Add-Ons &amp; Services</span>
                   </td>
-                  <td className={styles.estClientRowAmt}>{fmt(clientAddonsAmt)}</td>
+                  <td className={styles.estClientRowAmt}>{fmtClient(clientAddonsAmt)}</td>
                 </tr>
               )}
             </tbody>
             <tfoot>
               <tr className={styles.estClientSubtotalRow}>
                 <td className={styles.estClientSubtotalLabel}>Subtotal</td>
-                <td className={styles.estClientSubtotalAmt}>{fmt(clientTotal)}</td>
+                <td className={styles.estClientSubtotalAmt}>{fmtClient(clientTotal)}</td>
               </tr>
               {taxNum > 0 && (
                 <tr className={styles.estClientSubtotalRow}>
                   <td className={styles.estClientSubtotalLabel}>Tax ({taxNum}%)</td>
-                  <td className={styles.estClientSubtotalAmt}>{fmt(taxAmount)}</td>
+                  <td className={styles.estClientSubtotalAmt}>{fmtClient(taxAmount)}</td>
                 </tr>
               )}
               <tr className={styles.estClientTotalRow}>
                 <td className={styles.estClientTotalLabel}>TOTAL</td>
-                <td className={styles.estClientTotalAmt}>{fmt(grandTotal)}</td>
+                <td className={styles.estClientTotalAmt}>{fmtClient(grandTotal)}</td>
               </tr>
             </tfoot>
           </table>
@@ -1166,11 +1256,11 @@ export default function EstimatePanel({
             <div className={styles.estClientPaymentTitle}>Payment Schedule</div>
             <div className={styles.estClientPaymentRow}>
               <span>Deposit required ({depositPctNum}%)</span>
-              <span className={styles.estClientPaymentAmt}>{fmt(depositAmount)}</span>
+              <span className={styles.estClientPaymentAmt}>{fmtClient(depositAmount)}</span>
             </div>
             <div className={styles.estClientPaymentRow}>
               <span>Balance due on {formattedDate}</span>
-              <span className={styles.estClientPaymentAmt}>{fmt(balance)}</span>
+              <span className={styles.estClientPaymentAmt}>{fmtClient(balance)}</span>
             </div>
           </div>
 

@@ -2019,3 +2019,57 @@
   color: rgba(255,255,255,0.5);
   letter-spacing: 0.06em;
 }
+
+/* ── Estimate: 3-column cost breakdown with client price overrides ──────── */
+.estCostRowHeader {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 0 6px;
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  border-bottom: 1px solid var(--line-2);
+}
+
+.estCostColHead {
+  min-width: 80px;
+  text-align: right;
+}
+
+.estCostRow {
+  /* override: third flex child for client price */
+  align-items: center;
+}
+
+.estClientPriceCol {
+  min-width: 80px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.estClientPriceInput {
+  width: 72px;
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  padding: 3px 6px;
+  text-align: right;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.estClientPriceInput:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb, 120, 80, 60), 0.12);
+}
+
+/* remove spinner arrows */
+.estClientPriceInput::-webkit-outer-spin-button,
+.estClientPriceInput::-webkit-inner-spin-button { -webkit-appearance: none; }
+.estClientPriceInput[type=number] { -moz-appearance: textfield; }
