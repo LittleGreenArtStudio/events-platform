@@ -306,6 +306,256 @@
   color: var(--muted-2);
 }
 
+/* ── Todo column header row ───────────────────────── */
+.colHeaderRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line-2);
+  margin-bottom: 0;
+}
+
+.colHeaderLeft {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.newTaskBtn {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--accent);
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.newTaskBtn:hover {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+/* ── Inline task form ─────────────────────────────── */
+.taskForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 0 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.taskFormInput {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  width: 100%;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.taskFormInput:focus {
+  border-color: var(--accent);
+}
+
+.taskFormSelect {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  outline: none;
+}
+
+.taskFormSelect:focus {
+  border-color: var(--accent);
+}
+
+.taskFormRow {
+  display: flex;
+  gap: 8px;
+}
+
+.taskFormRow .taskFormSelect {
+  flex: 1;
+}
+
+.taskFormRow .taskFormInput {
+  flex: 1.4;
+  width: auto;
+}
+
+.taskFormEventRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.taskFormEventSelect {
+  flex: 1;
+}
+
+.taskFormTextarea {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  width: 100%;
+  outline: none;
+  resize: vertical;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+.taskFormTextarea:focus {
+  border-color: var(--accent);
+}
+
+.taskFormActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.taskFormSaveBtn {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper);
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.taskFormSaveBtn:hover:not(:disabled) {
+  background: var(--ink-2);
+  border-color: var(--ink-2);
+}
+
+.taskFormSaveBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.taskFormCancelBtn {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  background: none;
+  border: 1px solid var(--line-2);
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.taskFormCancelBtn:hover {
+  color: var(--ink);
+}
+
+.taskFormError {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--red);
+  margin: 0;
+}
+
+/* ── AI suggest button + panel ────────────────────── */
+.aiSuggestBtn {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(120, 95, 65, 0.06);
+  border: 1px solid var(--accent);
+  padding: 8px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.aiSuggestBtn:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+.aiSuggestBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.aiSuggestPanel {
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  padding: 12px 14px;
+}
+
+.aiSuggestLabel {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+.aiSuggestChips {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.aiSuggestChip {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 7px 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.aiSuggestChip:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--paper-2);
+}
+
+.aiSuggestChipDone {
+  background: var(--paper-2);
+  color: var(--muted-2);
+  cursor: default;
+}
+
+/* ── Priority pill variants ───────────────────────── */
+.priority_low    { background: var(--paper-3); color: var(--muted-2); }
+.priority_high   { background: rgba(184, 137, 58, 0.1); color: var(--amber); }
+.priority_urgent { background: rgba(166, 77, 63, 0.1); color: var(--red); }
+
 /* ── Todo List (center column) ────────────────────── */
 .todoTabs {
   display: flex;

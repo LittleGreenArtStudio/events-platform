@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { importCalendarEvent, updateCalendarPreferences, dismissEvent } from "./actions"
+import { importCalendarEvent, updateCalendarPreferences, dismissEvent, disconnectGoogle } from "./actions"
 import styles from "./integrations.module.css"
 import type { CalendarOption, CalendarSuggestion } from "./types"
 
@@ -134,9 +135,19 @@ export default function GoogleCalendarCard({
   )
   const [isPrefsPending, startPrefsTransition] = useTransition()
 
+  const router = useRouter()
   const [syncing, setSyncing] = useState(false)
   const [syncError, setSyncError] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState<CalendarSuggestion[] | null>(null)
+  const [disconnecting, startDisconnectTransition] = useTransition()
+
+  const handleDisconnect = () => {
+    if (!confirm("Disconnect Google? This will remove your saved tokens.")) return
+    startDisconnectTransition(async () => {
+      await disconnectGoogle()
+      router.refresh()
+    })
+  }
 
   const toggleCalendar = (id: string) => {
     const next = new Set(selectedIds)
@@ -187,7 +198,7 @@ export default function GoogleCalendarCard({
         <div className={styles.cardActions}>
           {connected ? (
             <>
-              <span className={styles.connectedBadge}>Connected ✓</span>
+              <span className={styles.connectedBadge}>Google Connected ✓</span>
               <button
                 className={styles.outlineBtn}
                 onClick={handleSync}
@@ -195,9 +206,13 @@ export default function GoogleCalendarCard({
               >
                 {syncing ? "Syncing…" : "Sync Calendar"}
               </button>
-              <a href="/api/auth/google" className={styles.outlineBtn}>
-                Reconnect
-              </a>
+              <button
+                className={styles.disconnectBtn}
+                onClick={handleDisconnect}
+                disabled={disconnecting}
+              >
+                {disconnecting ? "Disconnecting…" : "Disconnect"}
+              </button>
             </>
           ) : (
             <a href="/api/auth/google" className={styles.connectBtn}>

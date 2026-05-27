@@ -1,5 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/auth"
 import styles from "./dashboard.module.css"
+import TodoSection from "./_components/TodoSection"
+import type { EventOption, TaskRow } from "./_components/TodoSection"
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -12,14 +14,6 @@ type EventRow = {
   event_date: string
   guest_count: number | null
   eventType: EventType
-}
-
-type TaskRow = {
-  id: string
-  title: string
-  status: string
-  priority: string | null
-  due_date: string | null
 }
 
 type RawEvent = {
@@ -54,68 +48,6 @@ function dotClass(status: string): string {
   return styles.dotInProgress
 }
 
-// ── Sub-components ───────────────────────────────────────────────────────
-
-function TodoRow({
-  task,
-  today,
-  done = false,
-}: {
-  task: TaskRow
-  today: string
-  done?: boolean
-}) {
-  const isOverdue = !done && !!task.due_date && task.due_date < today
-  return (
-    <div className={styles.todoItem}>
-      <div
-        className={
-          done
-            ? `${styles.todoCheckbox} ${styles.todoCheckboxDone}`
-            : styles.todoCheckbox
-        }
-      >
-        {done && (
-          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-            <path
-              d="M1 4L3.5 6.5L9 1"
-              stroke="white"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        )}
-      </div>
-      <div className={styles.todoBody}>
-        <div
-          className={
-            done
-              ? `${styles.todoTitle} ${styles.todoTitleDone}`
-              : styles.todoTitle
-          }
-        >
-          {task.title}
-        </div>
-        {task.priority && !done && (
-          <div className={styles.todoPills}>
-            <span className={styles.todoPill}>{task.priority}</span>
-          </div>
-        )}
-      </div>
-      <div
-        className={
-          isOverdue
-            ? `${styles.todoDue} ${styles.todoDueOverdue}`
-            : styles.todoDue
-        }
-      >
-        {task.due_date ? formatShortDate(task.due_date) : ""}
-      </div>
-    </div>
-  )
-}
-
 // ── Page ─────────────────────────────────────────────────────────────────
 
 export default async function DashboardPage() {
@@ -148,6 +80,8 @@ export default async function DashboardPage() {
     offsiteUpcoming,
     inStudioUpcoming,
     tasksAll,
+    offsiteOptions,
+    inStudioOptions,
   ] = await Promise.all([
     supabase
       .from("offsite_events")
@@ -205,6 +139,18 @@ export default async function DashboardPage() {
       .select("id, title, status, priority, due_date")
       .order("due_date", { nullsFirst: false })
       .limit(30),
+    supabase
+      .from("offsite_events")
+      .select("id, title, event_date")
+      .gte("event_date", today)
+      .order("event_date")
+      .limit(50),
+    supabase
+      .from("in_studio_events")
+      .select("id, title, event_date")
+      .gte("event_date", today)
+      .order("event_date")
+      .limit(50),
   ])
 
   // Process events — cast raw Supabase data to known shape
@@ -226,36 +172,16 @@ export default async function DashboardPage() {
   // Process tasks — cast raw Supabase data to known shape
   const tasks = (tasksAll.data ?? []) as TaskRow[]
 
-  const overdueTasks = tasks.filter(
-    (t) =>
-      t.due_date &&
-      t.due_date < today &&
-      t.status !== "done" &&
-      t.status !== "completed"
-  )
-  const todayTasks = tasks.filter(
-    (t) =>
-      t.due_date === today &&
-      t.status !== "done" &&
-      t.status !== "completed"
-  )
-  const upcomingTasks = tasks.filter(
-    (t) =>
-      (!t.due_date || t.due_date > today) &&
-      t.status !== "done" &&
-      t.status !== "completed"
-  )
-  const thisWeekTasks = tasks.filter(
-    (t) =>
-      t.due_date &&
-      t.due_date >= today &&
-      t.due_date <= weekEndStr &&
-      t.status !== "done" &&
-      t.status !== "completed"
-  )
-  const completedTasks = tasks
-    .filter((t) => t.status === "done" || t.status === "completed")
-    .slice(0, 3)
+  // Event options for task creation form
+  type RawEventOption = { id: string; title: string; event_date: string }
+  const eventOptions: EventOption[] = [
+    ...((offsiteOptions.data ?? []) as unknown as RawEventOption[]).map((e) => ({
+      id: e.id, title: e.title, date: e.event_date, type: "offsite" as const,
+    })),
+    ...((inStudioOptions.data ?? []) as unknown as RawEventOption[]).map((e) => ({
+      id: e.id, title: e.title, date: e.event_date, type: "in-studio" as const,
+    })),
+  ].sort((a, b) => a.date.localeCompare(b.date))
 
   // Pulse bar stats
   const pulseStats = [
@@ -279,8 +205,6 @@ export default async function DashboardPage() {
     },
     { label: "Outstanding Invoices", value: invoicesCount.count ?? 0 },
   ]
-
-  const openCount = openTasksCount.count ?? 0
 
   return (
     <>
@@ -339,77 +263,7 @@ export default async function DashboardPage() {
 
         {/* Center — Master Todo List */}
         <div>
-          <div className={styles.colHeader}>
-            <span className={styles.colTitle}>Master Todo List</span>
-            <span className={styles.colCount}>{openCount}</span>
-          </div>
-
-          <div className={styles.todoTabs}>
-            {[
-              {
-                label: "All",
-                count:
-                  overdueTasks.length +
-                  todayTasks.length +
-                  upcomingTasks.length,
-              },
-              { label: "Today", count: todayTasks.length },
-              { label: "This Week", count: thisWeekTasks.length },
-              { label: "Overdue", count: overdueTasks.length },
-            ].map(({ label, count }) => (
-              <span
-                key={label}
-                className={`${styles.todoTab} ${
-                  label === "All" ? styles.todoTabActive : ""
-                }`}
-              >
-                {label}
-                {count > 0 && (
-                  <span className={styles.todoTabBadge}>{count}</span>
-                )}
-              </span>
-            ))}
-          </div>
-
-          {tasks.length === 0 && (
-            <p className={styles.todoEmpty}>No tasks yet.</p>
-          )}
-
-          {overdueTasks.length > 0 && (
-            <div className={styles.todoGroup}>
-              <div className={styles.todoGroupLabel}>Overdue</div>
-              {overdueTasks.map((task) => (
-                <TodoRow key={task.id} task={task} today={today} />
-              ))}
-            </div>
-          )}
-
-          {todayTasks.length > 0 && (
-            <div className={styles.todoGroup}>
-              <div className={styles.todoGroupLabel}>Today</div>
-              {todayTasks.map((task) => (
-                <TodoRow key={task.id} task={task} today={today} />
-              ))}
-            </div>
-          )}
-
-          {upcomingTasks.length > 0 && (
-            <div className={styles.todoGroup}>
-              <div className={styles.todoGroupLabel}>Upcoming</div>
-              {upcomingTasks.map((task) => (
-                <TodoRow key={task.id} task={task} today={today} />
-              ))}
-            </div>
-          )}
-
-          {completedTasks.length > 0 && (
-            <div className={styles.todoGroup}>
-              <div className={styles.todoGroupLabel}>Completed</div>
-              {completedTasks.map((task) => (
-                <TodoRow key={task.id} task={task} today={today} done />
-              ))}
-            </div>
-          )}
+          <TodoSection tasks={tasks} eventOptions={eventOptions} today={today} />
 
           {/* Weekly Round-up */}
           <div className={styles.roundup}>

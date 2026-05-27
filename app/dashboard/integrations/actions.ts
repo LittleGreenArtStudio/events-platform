@@ -3,6 +3,23 @@
 import { createSupabaseServerClient } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 
+export async function disconnectGoogle(): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: "Unauthenticated" }
+
+  const { error } = await supabase
+    .from("google_tokens")
+    .delete()
+    .eq("user_id", user.id)
+
+  if (error) return { ok: false, error: error.message }
+  revalidatePath("/dashboard/integrations")
+  return { ok: true }
+}
+
 export async function importCalendarEvent(
   formData: FormData
 ): Promise<{ eventId: string; eventType: string } | { error: string }> {

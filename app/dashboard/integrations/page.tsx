@@ -13,13 +13,19 @@ export default async function IntegrationsPage({
   const user = await getCachedUser()
   const supabase = await createSupabaseServerClient()
 
-  const { data: rawTokenRow } = user
+  const { data: rawTokenRow, error: tokenError } = user
     ? await supabase
         .from("google_tokens")
-        .select("access_token, refresh_token, expires_at, selected_calendar_ids")
+        .select("*")
         .eq("user_id", user.id)
         .maybeSingle()
-    : { data: null }
+    : { data: null, error: null }
+
+  console.log("[integrations] user.id:", user?.id ?? "null")
+  console.log("[integrations] token row:", rawTokenRow ? "found" : "null")
+  if (tokenError) {
+    console.error("[integrations] token query error:", tokenError.code, tokenError.message)
+  }
 
   type TokenRow = {
     access_token: string
