@@ -4,10 +4,18 @@ import { useRef, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { createBrowserClient } from "@supabase/ssr"
 import Image from "next/image"
-import { addCraftPhotoUrl, removeCraftPhoto } from "../../actions"
+import { addCraftPhotoUrls, removeCraftPhoto } from "../../actions"
 import { compressImageTo } from "@/lib/compress-image"
 import { BLUR_DATA_URL } from "@/lib/blur-data-url"
 import styles from "../../crafts.module.css"
+
+type UploadItem = {
+  id: string
+  name: string
+  previewUrl: string
+  status: "optimising" | "uploading" | "done" | "error"
+  error?: string
+}
 
 export default function PhotoUpload({
   craftId,
@@ -18,56 +26,79 @@ export default function PhotoUpload({
 }) {
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
-  const [uploadStatus, setUploadStatus] = useState<"idle" | "optimising" | "uploading">("idle")
+  const dragCounterRef = useRef(0)
+  const [isDragOver, setIsDragOver] = useState(false)
+  const [uploading, setUploading] = useState<UploadItem[]>([])
   const [removingUrl, setRemovingUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [, startTransition] = useTransition()
 
+  const isProcessing = uploading.some((u) => u.status !== "done" && u.status !== "error")
+  const doneCount = uploading.filter((u) => u.status === "done").length
+
+  // ── Upload (parallel, per-file progress) ──────────────────────────────
   const handleFiles = async (files: FileList) => {
     setError(null)
+    const fileArray = Array.from(files).filter((f) => f.type.startsWith("image/"))
+    if (!fileArray.length) return
 
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
 
-    for (const file of Array.from(files)) {
-      setUploadStatus("optimising")
-      const compressed = await compressImageTo(file, 400, 0.6)
+    const items: UploadItem[] = fileArray.map((f) => ({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      name: f.name,
+      previewUrl: URL.createObjectURL(f),
+      status: "optimising" as const,
+    }))
+    setUploading(items)
 
-      setUploadStatus("uploading")
-      const baseName = compressed.name.replace(/[^a-z0-9_.-]/gi, "-")
-      const path = `${craftId}/${Date.now()}-${baseName}`
+    const updateItem = (id: string, patch: Partial<UploadItem>) =>
+      setUploading((prev) => prev.map((u) => (u.id === id ? { ...u, ...patch } : u)))
 
-      const { error: uploadError } = await supabase.storage
-        .from("craft-images")
-        .upload(path, compressed, { contentType: compressed.type, upsert: false })
+    const uploadedUrls: string[] = []
 
-      if (uploadError) {
-        setError(`Upload failed: ${uploadError.message}`)
-        setUploadStatus("idle")
-        if (fileRef.current) fileRef.current.value = ""
-        return
-      }
+    await Promise.allSettled(
+      fileArray.map(async (file, i) => {
+        const id = items[i].id
+        const compressed = await compressImageTo(file, 400, 0.6)
+        updateItem(id, { status: "uploading" })
 
-      const { data: { publicUrl } } = supabase.storage
-        .from("craft-images")
-        .getPublicUrl(path)
+        const baseName = compressed.name.replace(/[^a-z0-9_.-]/gi, "-")
+        const path = `${craftId}/${id}-${baseName}`
 
-      const res = await addCraftPhotoUrl(craftId, publicUrl)
-      if ("error" in res) {
-        setError(res.error)
-        setUploadStatus("idle")
-        if (fileRef.current) fileRef.current.value = ""
-        return
-      }
+        const { error: uploadError } = await supabase.storage
+          .from("craft-images")
+          .upload(path, compressed, { contentType: compressed.type, upsert: false })
+
+        if (uploadError) {
+          updateItem(id, { status: "error", error: uploadError.message })
+          throw uploadError
+        }
+
+        const { data: { publicUrl } } = supabase.storage.from("craft-images").getPublicUrl(path)
+        uploadedUrls.push(publicUrl)
+        updateItem(id, { status: "done" })
+      })
+    )
+
+    items.forEach((u) => URL.revokeObjectURL(u.previewUrl))
+
+    if (uploadedUrls.length) {
+      const res = await addCraftPhotoUrls(craftId, uploadedUrls)
+      if ("error" in res) setError(res.error)
     }
 
-    setUploadStatus("idle")
-    if (fileRef.current) fileRef.current.value = ""
-    router.refresh()
+    setTimeout(() => {
+      setUploading([])
+      if (fileRef.current) fileRef.current.value = ""
+      router.refresh()
+    }, 1200)
   }
 
+  // ── Remove ─────────────────────────────────────────────────────────────
   const handleRemove = (url: string) => {
     setRemovingUrl(url)
     setError(null)
@@ -79,8 +110,51 @@ export default function PhotoUpload({
     })
   }
 
+  // ── Drop zone handlers ─────────────────────────────────────────────────
+  const handleDragEnter = (e: React.DragEvent) => {
+    if (!e.dataTransfer.types.includes("Files")) return
+    e.preventDefault()
+    dragCounterRef.current++
+    setIsDragOver(true)
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    if (!e.dataTransfer.types.includes("Files")) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = "copy"
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    if (!e.dataTransfer.types.includes("Files")) return
+    dragCounterRef.current--
+    if (dragCounterRef.current <= 0) {
+      dragCounterRef.current = 0
+      setIsDragOver(false)
+    }
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    dragCounterRef.current = 0
+    setIsDragOver(false)
+    if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files)
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────
   return (
-    <div>
+    <div
+      className={`${styles.photoUploadZone} ${isDragOver ? styles.photoUploadZoneDragOver : ""}`}
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {isDragOver && (
+        <div className={styles.photoDropOverlay}>
+          <span className={styles.photoDropOverlayText}>Drop photos here</span>
+        </div>
+      )}
+
       {imageUrls.length > 0 && (
         <div className={styles.photoGrid}>
           {imageUrls.map((url) => (
@@ -109,6 +183,39 @@ export default function PhotoUpload({
 
       {error && <p className={styles.photoError}>{error}</p>}
 
+      {/* Per-file upload progress */}
+      {uploading.length > 0 && (
+        <div className={styles.photoProgress}>
+          <div className={styles.photoProgressCounter}>
+            {doneCount} of {uploading.length} uploaded
+          </div>
+          <div className={styles.photoProgressList}>
+            {uploading.map((u) => (
+              <div key={u.id} className={styles.photoProgressItem}>
+                <div className={styles.photoProgressThumb}>
+                  {/* blob URL — plain img only, not next/image */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={u.previewUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                </div>
+                <span className={styles.photoProgressName}>{u.name}</span>
+                {u.status === "done" ? (
+                  <span className={`${styles.photoProgressStatus} ${styles.photoProgressStatusDone}`}>✓ Done</span>
+                ) : u.status === "error" ? (
+                  <span className={`${styles.photoProgressStatus} ${styles.photoProgressStatusError}`}>{u.error ?? "Failed"}</span>
+                ) : (
+                  <>
+                    <span className={styles.photoProgressStatus}>
+                      {u.status === "optimising" ? "Optimising" : "Uploading"}
+                    </span>
+                    <div className={styles.photoSpinner} />
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <input
         ref={fileRef}
         type="file"
@@ -121,13 +228,11 @@ export default function PhotoUpload({
       />
       <button
         className={styles.uploadBtn}
-        disabled={uploadStatus !== "idle"}
+        disabled={isProcessing}
         onClick={() => fileRef.current?.click()}
       >
-        {uploadStatus === "optimising"
-          ? "Optimising image…"
-          : uploadStatus === "uploading"
-          ? "Uploading…"
+        {isProcessing
+          ? `Uploading… (${doneCount} of ${uploading.length})`
           : imageUrls.length > 0
           ? "+ Add More Photos"
           : "+ Add Photos"}

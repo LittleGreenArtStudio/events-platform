@@ -16,6 +16,14 @@ type PhotoTag = "Inspo" | "Client Provided" | "Venue" | "Past Event" | "Other"
 
 const TAGS: PhotoTag[] = ["Inspo", "Client Provided", "Venue", "Past Event", "Other"]
 
+type UploadItem = {
+  id: string
+  name: string
+  previewUrl: string
+  status: "optimising" | "uploading" | "done" | "error"
+  error?: string
+}
+
 // ── Main component ────────────────────────────────────────────────────────
 
 export default function PhotoBoard({
@@ -29,14 +37,14 @@ export default function PhotoBoard({
 }) {
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
+  const dragCounterRef = useRef(0)
   const [, startTransition] = useTransition()
 
   const [photos, setPhotos] = useState<PhotoEntry[]>(initialPhotos)
   const [filter, setFilter] = useState<PhotoTag | "All">("All")
   const [uploadTag, setUploadTag] = useState<PhotoTag>("Inspo")
-  const [uploading, setUploading] = useState(false)
-  const [uploadLabel, setUploadLabel] = useState("")
-  const [optimising, setOptimising] = useState(false)
+  const [isDragOver, setIsDragOver] = useState(false)
+  const [uploading, setUploading] = useState<UploadItem[]>([])
   const [error, setError] = useState<string | null>(null)
 
   // Lightbox — tracked by URL so it survives photo reorders
@@ -51,9 +59,10 @@ export default function PhotoBoard({
     acc[p.tag] = (acc[p.tag] ?? 0) + 1
     return acc
   }, {})
-
   const lightboxPhoto = lightboxUrl ? photos.find((p) => p.url === lightboxUrl) ?? null : null
   const lightboxIdx = lightboxUrl ? photos.findIndex((p) => p.url === lightboxUrl) : -1
+  const isProcessing = uploading.some((u) => u.status !== "done" && u.status !== "error")
+  const doneCount = uploading.filter((u) => u.status === "done").length
 
   // ── Keyboard nav for lightbox ──────────────────────────────────────────
   useEffect(() => {
@@ -71,77 +80,80 @@ export default function PhotoBoard({
     return () => window.removeEventListener("keydown", handle)
   }, [lightboxUrl, lightboxIdx, photos])
 
-  // ── Upload ────────────────────────────────────────────────────────────
+  // ── Upload (all files in parallel, per-file progress) ─────────────────
   const handleFiles = async (files: FileList) => {
     setError(null)
+    const fileArray = Array.from(files).filter((f) =>
+      ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(f.type)
+    )
+    if (!fileArray.length) return
 
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
 
-    const fileArray = Array.from(files)
-    const added: PhotoEntry[] = []
+    const items: UploadItem[] = fileArray.map((f) => ({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      name: f.name,
+      previewUrl: URL.createObjectURL(f),
+      status: "optimising" as const,
+    }))
+    setUploading(items)
 
-    for (let i = 0; i < fileArray.length; i++) {
-      const file = fileArray[i]
+    const updateItem = (id: string, patch: Partial<UploadItem>) =>
+      setUploading((prev) => prev.map((u) => (u.id === id ? { ...u, ...patch } : u)))
 
-      // Compress both variants in parallel
-      setOptimising(true)
-      setUploading(false)
-      const [thumb, full] = await Promise.all([
-        compressImageTo(file, 400, 0.6),
-        compressImageTo(file, 1200, 0.82),
-      ])
-      setOptimising(false)
+    const results = await Promise.allSettled(
+      fileArray.map(async (file, i) => {
+        const id = items[i].id
 
-      setUploading(true)
-      setUploadLabel(`${i + 1} / ${fileArray.length}`)
+        const [thumb, full] = await Promise.all([
+          compressImageTo(file, 400, 0.6),
+          compressImageTo(file, 1200, 0.82),
+        ])
+        updateItem(id, { status: "uploading" })
 
-      const ts = Date.now()
-      const baseName = thumb.name.replace(/[^a-z0-9_.-]/gi, "-")
-      const thumbPath = `${eventKind}/${eventId}/thumbs/${ts}-${baseName}`
-      const fullPath  = `${eventKind}/${eventId}/full/${ts}-${baseName}`
+        const baseName = thumb.name.replace(/[^a-z0-9_.-]/gi, "-")
+        const thumbPath = `${eventKind}/${eventId}/thumbs/${id}-${baseName}`
+        const fullPath  = `${eventKind}/${eventId}/full/${id}-${baseName}`
 
-      const { error: thumbErr } = await supabase.storage
-        .from("event-photos")
-        .upload(thumbPath, thumb, { contentType: thumb.type, upsert: false })
+        const [{ error: te }, { error: fe }] = await Promise.all([
+          supabase.storage.from("event-photos").upload(thumbPath, thumb, { contentType: thumb.type, upsert: false }),
+          supabase.storage.from("event-photos").upload(fullPath,  full,  { contentType: full.type,  upsert: false }),
+        ])
 
-      if (thumbErr) {
-        setError(`Upload failed: ${thumbErr.message}`)
-        setUploading(false)
-        setUploadLabel("")
-        if (fileRef.current) fileRef.current.value = ""
-        return
-      }
+        if (te || fe) {
+          const msg = te?.message ?? fe?.message ?? "Upload failed"
+          updateItem(id, { status: "error", error: msg })
+          throw new Error(msg)
+        }
 
-      const { error: fullErr } = await supabase.storage
-        .from("event-photos")
-        .upload(fullPath, full, { contentType: full.type, upsert: false })
+        const thumbUrl = supabase.storage.from("event-photos").getPublicUrl(thumbPath).data.publicUrl
+        const fullUrl  = supabase.storage.from("event-photos").getPublicUrl(fullPath).data.publicUrl
+        updateItem(id, { status: "done" })
+        return { url: fullUrl, thumb: thumbUrl, tag: uploadTag, uploaded_at: new Date().toISOString() } as PhotoEntry
+      })
+    )
 
-      if (fullErr) {
-        setError(`Upload failed: ${fullErr.message}`)
-        setUploading(false)
-        setUploadLabel("")
-        if (fileRef.current) fileRef.current.value = ""
-        return
-      }
+    items.forEach((u) => URL.revokeObjectURL(u.previewUrl))
 
-      const thumbUrl = supabase.storage.from("event-photos").getPublicUrl(thumbPath).data.publicUrl
-      const fullUrl  = supabase.storage.from("event-photos").getPublicUrl(fullPath).data.publicUrl
+    const added = results
+      .filter((r): r is PromiseFulfilledResult<PhotoEntry> => r.status === "fulfilled")
+      .map((r) => r.value)
 
-      added.push({ url: fullUrl, thumb: thumbUrl, tag: uploadTag, uploaded_at: new Date().toISOString() })
+    if (added.length) {
+      const merged = [...photos, ...added]
+      setPhotos(merged)
+      const res = await updateEventPhotoUrls(eventKind, eventId, merged)
+      if ("error" in res) setError(res.error)
     }
 
-    const merged = [...photos, ...added]
-    setPhotos(merged)
-    setUploading(false)
-    setUploadLabel("")
-    if (fileRef.current) fileRef.current.value = ""
-
-    const res = await updateEventPhotoUrls(eventKind, eventId, merged)
-    if ("error" in res) setError(res.error)
-    router.refresh()
+    setTimeout(() => {
+      setUploading([])
+      if (fileRef.current) fileRef.current.value = ""
+      router.refresh()
+    }, 1200)
   }
 
   // ── Delete ─────────────────────────────────────────────────────────────
@@ -175,9 +187,53 @@ export default function PhotoBoard({
     })
   }
 
+  // ── Board-level file drop ──────────────────────────────────────────────
+  // Guard on types.includes("Files") so photo-reorder drags are unaffected.
+  const handleBoardDragEnter = (e: React.DragEvent) => {
+    if (!e.dataTransfer.types.includes("Files") || lightboxUrl) return
+    e.preventDefault()
+    dragCounterRef.current++
+    setIsDragOver(true)
+  }
+
+  const handleBoardDragOver = (e: React.DragEvent) => {
+    if (!e.dataTransfer.types.includes("Files")) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = "copy"
+  }
+
+  const handleBoardDragLeave = (e: React.DragEvent) => {
+    if (!e.dataTransfer.types.includes("Files")) return
+    dragCounterRef.current--
+    if (dragCounterRef.current <= 0) {
+      dragCounterRef.current = 0
+      setIsDragOver(false)
+    }
+  }
+
+  const handleBoardDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    dragCounterRef.current = 0
+    setIsDragOver(false)
+    if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files)
+  }
+
   // ── Render ────────────────────────────────────────────────────────────
   return (
-    <div>
+    <div
+      className={styles.pbBoard}
+      onDragEnter={handleBoardDragEnter}
+      onDragOver={handleBoardDragOver}
+      onDragLeave={handleBoardDragLeave}
+      onDrop={handleBoardDrop}
+    >
+      {/* Drop overlay */}
+      {isDragOver && (
+        <div className={styles.pbDropOverlay}>
+          <span className={styles.pbDropOverlayText}>Drop photos here</span>
+        </div>
+      )}
+
       {/* Upload bar */}
       <div className={styles.pbBar}>
         <label className={styles.pbTagLabel}>Tag as</label>
@@ -186,7 +242,7 @@ export default function PhotoBoard({
           style={{ width: 160 }}
           value={uploadTag}
           onChange={(e) => setUploadTag(e.target.value as PhotoTag)}
-          disabled={uploading}
+          disabled={isProcessing}
         >
           {TAGS.map((t) => (
             <option key={t} value={t}>
@@ -196,13 +252,11 @@ export default function PhotoBoard({
         </select>
         <button
           className={styles.addBtn}
-          disabled={optimising || uploading}
+          disabled={isProcessing}
           onClick={() => fileRef.current?.click()}
         >
-          {optimising
-            ? "Optimising image…"
-            : uploading
-            ? `Uploading ${uploadLabel}…`
+          {isProcessing
+            ? `Uploading… (${doneCount} of ${uploading.length})`
             : "+ Add Photos"}
         </button>
         <input
@@ -217,6 +271,39 @@ export default function PhotoBoard({
         />
         {error && <span className={styles.addError}>{error}</span>}
       </div>
+
+      {/* Per-file upload progress */}
+      {uploading.length > 0 && (
+        <div className={styles.pbProgress}>
+          <div className={styles.pbProgressCounter}>
+            {doneCount} of {uploading.length} uploaded
+          </div>
+          <div className={styles.pbProgressList}>
+            {uploading.map((u) => (
+              <div key={u.id} className={styles.pbProgressItem}>
+                <div className={styles.pbProgressThumb}>
+                  {/* blob URL — plain img only, not next/image */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={u.previewUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                </div>
+                <span className={styles.pbProgressName}>{u.name}</span>
+                {u.status === "done" ? (
+                  <span className={`${styles.pbProgressStatus} ${styles.pbProgressStatusDone}`}>✓ Done</span>
+                ) : u.status === "error" ? (
+                  <span className={`${styles.pbProgressStatus} ${styles.pbProgressStatusError}`}>{u.error ?? "Failed"}</span>
+                ) : (
+                  <>
+                    <span className={styles.pbProgressStatus}>
+                      {u.status === "optimising" ? "Optimising" : "Uploading"}
+                    </span>
+                    <div className={styles.pbSpinner} />
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Filter tabs */}
       {photos.length > 0 && (
@@ -299,10 +386,7 @@ export default function PhotoBoard({
 
       {/* Lightbox */}
       {lightboxPhoto && (
-        <div
-          className={styles.pbLightbox}
-          onClick={() => setLightboxUrl(null)}
-        >
+        <div className={styles.pbLightbox} onClick={() => setLightboxUrl(null)}>
           <button
             className={styles.pbLbClose}
             onClick={() => setLightboxUrl(null)}

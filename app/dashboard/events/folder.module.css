@@ -2072,3 +2072,103 @@
 .estClientPriceInput::-webkit-outer-spin-button,
 .estClientPriceInput::-webkit-inner-spin-button { -webkit-appearance: none; }
 .estClientPriceInput[type=number] { -moz-appearance: textfield; }
+
+/* ── Photo board: drop zone + progress ───────────────────────────────────── */
+.pbBoard {
+  position: relative;
+}
+
+.pbDropOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: rgba(250, 247, 242, 0.92);
+  border: 2px dashed var(--accent);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.pbDropOverlayText {
+  font-family: var(--serif);
+  font-size: 22px;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.pbProgress {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  background: var(--paper-2);
+  border: 1px solid var(--line-2);
+  border-radius: 2px;
+}
+
+.pbProgressCounter {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  margin-bottom: 10px;
+}
+
+.pbProgressList {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.pbProgressItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pbProgressThumb {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 1px;
+  overflow: hidden;
+  background: var(--paper-3);
+  border: 1px solid var(--line-2);
+}
+
+.pbProgressName {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--sans);
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pbProgressStatus {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  flex-shrink: 0;
+}
+
+.pbProgressStatusDone { color: #547a5c; }
+.pbProgressStatusError { color: #a0392b; letter-spacing: 0; text-transform: none; }
+
+@keyframes pbSpin { to { transform: rotate(360deg); } }
+.pbSpinner {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: pbSpin 0.7s linear infinite;
+}

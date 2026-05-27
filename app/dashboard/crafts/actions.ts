@@ -205,10 +205,10 @@ export async function saveSupplySuggestions(
 // ── Photo Upload ──────────────────────────────────────────────────────────
 
 // Storage upload happens client-side in PhotoUpload.tsx; this action
-// only appends the resulting public URL to the craft's image_urls array.
-export async function addCraftPhotoUrl(
+// only appends the resulting public URLs to the craft's image_urls array.
+export async function addCraftPhotoUrls(
   craftId: string,
-  url: string
+  urls: string[]
 ): Promise<{ ok: true } | { error: string }> {
   const supabase = await createSupabaseServerClient()
 
@@ -223,17 +223,24 @@ export async function addCraftPhotoUrl(
 
   const { error: updateError } = await supabase
     .from("crafts")
-    .update({ image_urls: [...current, url] })
+    .update({ image_urls: [...current, ...urls] })
     .eq("id", craftId)
 
   if (updateError) {
-    console.error("[addCraftPhotoUrl]", updateError.message)
+    console.error("[addCraftPhotoUrls]", updateError.message)
     return { error: updateError.message }
   }
 
   revalidatePath(`/dashboard/crafts/${craftId}`)
   revalidatePath("/dashboard/crafts")
   return { ok: true }
+}
+
+export async function addCraftPhotoUrl(
+  craftId: string,
+  url: string
+): Promise<{ ok: true } | { error: string }> {
+  return addCraftPhotoUrls(craftId, [url])
 }
 
 // ── Photo Remove ──────────────────────────────────────────────────────────

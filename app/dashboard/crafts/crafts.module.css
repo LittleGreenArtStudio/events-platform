@@ -1201,3 +1201,109 @@
   opacity: 0.4;
   cursor: default;
 }
+
+/* ── Craft photo upload: drop zone + progress ────────────────────────────── */
+.photoUploadZone {
+  position: relative;
+}
+
+.photoUploadZoneDragOver {
+  outline: 2px dashed var(--accent);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+.photoDropOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: rgba(250, 247, 242, 0.92);
+  border: 2px dashed var(--accent);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.photoDropOverlayText {
+  font-family: var(--serif);
+  font-size: 18px;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.photoProgress {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: var(--paper-2);
+  border: 1px solid var(--line-2);
+  border-radius: 2px;
+}
+
+.photoProgressCounter {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  margin-bottom: 8px;
+}
+
+.photoProgressList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.photoProgressItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.photoProgressThumb {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 1px;
+  overflow: hidden;
+  background: var(--paper-3);
+  border: 1px solid var(--line-2);
+}
+
+.photoProgressName {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--sans);
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.photoProgressStatus {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  flex-shrink: 0;
+}
+
+.photoProgressStatusDone { color: #547a5c; }
+.photoProgressStatusError { color: #a0392b; letter-spacing: 0; text-transform: none; }
+
+@keyframes photoSpin { to { transform: rotate(360deg); } }
+.photoSpinner {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: photoSpin 0.7s linear infinite;
+}
